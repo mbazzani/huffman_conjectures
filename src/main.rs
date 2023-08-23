@@ -1,40 +1,7 @@
-use num::rational::Ratio;
+mod node;
+use node::Node;
+use node::NodeType;
 use itertools::Itertools;
-use std::cmp::Ordering;
-use std::error::Error;
-use std::ops::Add;
-
-#[derive(Debug, Clone)]
-enum NodeType<T: Add<Output = T>> {
-    Leaf { symbol: char },
-    Branch { left: Box<Node<T>>, right: Box<Node<T>> },
-}
-
-#[derive(Debug, Clone)]
-struct Node<T: Add<Output = T>> {
-    probability: T,
-    r#type: NodeType<T>,
-}
-
-impl PartialEq for Node<u32> {
-    fn eq(&self, other: &Self) -> bool {
-        self.probability==other.probability
-    }
-}
-
-impl Eq for Node<u32> {}
-
-impl PartialOrd for Node<u32> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Option::Some(self.probability.cmp(&other.probability))
-    }
-}
-
-impl Ord for Node<u32> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.probability.cmp(&other.probability)
-    }
-}
 
 fn construct_huffman(mut nodes: Vec<Node<u32>>) -> Option<Node<u32>> {
     loop {
