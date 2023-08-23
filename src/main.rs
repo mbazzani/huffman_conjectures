@@ -19,13 +19,25 @@ fn construct_huffman(mut nodes: Vec<Node<u32>>) -> Option<Node<u32>> {
 }
 
 fn join(left: Node<u32>,  right: Node<u32>) -> Node<u32> {
-    Node {
-        probability: right.probability + left.probability, 
-        r#type: NodeType::Branch {
-            left: Box::new((left).clone()),
-            right: Box::new((right).clone()),
-        }
-    }
+    Node::new_branch(left, right)
+}
+
+
+fn possible_pair_indices(length: u32) -> Vec<(u32, u32)> {
+    return (0..length).tuple_combinations::<(_,_)>().collect::<Vec<_>>()
+}
+fn join_pair(pair_indices: (u32, u32), nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
+    unimplemented!();
+}
+
+fn get_possible_reductions(nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
+    let min: &Node<u32> = nodes.iter().min().unwrap();
+    let length = unimplemented!();
+    let pair_indices = (0..length)
+        .tuple_combinations::<(_,_)>()
+        .collect::<Vec<_>>();
+    for (first, second) in pair_indices {}
+    unimplemented!();
 }
 
 fn get_all_huffman(leaves: Vec<Node<u32>>) -> Vec<Node<u32>> {
@@ -61,22 +73,10 @@ fn get_all_huffman(leaves: Vec<Node<u32>>) -> Vec<Node<u32>> {
 //Check shape of best Huffman code
 fn main() {
     let leaves = vec![
-        Node {
-            probability: 2,
-            r#type: NodeType::Leaf { symbol: '🦀' },
-        },
-        Node {
-            probability: 2,
-            r#type: NodeType::Leaf { symbol: 'A' },
-        },
-        Node {
-            probability: 1,
-            r#type: NodeType::Leaf { symbol: 'B' },
-        },
-        Node {
-            probability: 1,
-            r#type: NodeType::Leaf { symbol: 'C' },
-        },
+        Node::new_leaf(2, '🦀'),
+        Node::new_leaf(2, '🍉'),
+        Node::new_leaf(1, '🏅'),
+        Node::new_leaf(1, '🦬'),
     ];
     let huffman_codes = get_all_huffman(leaves);
     println!("{:#?}", huffman_codes);
