@@ -1,10 +1,11 @@
 use std::cmp::Ordering;
+use std::rc::Rc;
 use std::ops::Add;
 
 #[derive(Debug, Clone)]
 pub enum NodeType<T> {
     Leaf { symbol: char },
-    Branch(Box<[Node<T>; 2]>) ,
+    Branch(Rc<[Node<T>; 2]>) ,
 }
 
 #[derive(Debug, Clone)]
@@ -45,7 +46,8 @@ where T: Add<Output = T> + Copy {
     pub fn new_branch(left: Node<T>, right: Node<T>) -> Node<T> {
         Node {
             probability: left.probability + right.probability,
-            node_type: NodeType::Branch(Box::new([left, right]))
+            node_type: NodeType::Branch(Rc::new([left, right])),
+
         }
     }
     pub fn probability(&self) -> T {

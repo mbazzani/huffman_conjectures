@@ -22,10 +22,18 @@ fn construct_huffman(mut nodes: Vec<Node<u32>>) -> Option<Node<u32>> {
 fn pair_combinations_in_range(length: usize) -> Vec<(usize, usize)> {
     return (0..length).tuple_combinations::<(_,_)>().collect::<Vec<_>>()
 }
-fn join_pair(pair_index: (usize, usize), mut nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
+
+fn remove_two<T>(x: usize, y:usize, vec: &mut Vec<T>) -> (T, T){
+    assert!(x!=y);
+    let mut pair = vec![x, y];
+    pair.sort();
+    let j = vec.remove(pair[0]);
+    let k = vec.remove(pair[1]-1);
+    (j, k)
+}
+fn join_pair_by_indices(pair_index: (usize, usize), mut nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
     let (l, r) = pair_index;
-    let left = nodes.remove(l); 
-    let right = nodes.remove(r); 
+    let (left, right) =  remove_two(l, r, &mut nodes);
     nodes.push(Node::new_branch(left, right));
     nodes
 }
@@ -39,14 +47,6 @@ where T: Eq + Ord {
         count=i;
     }
     count+1
-}
-fn remove_two<T>(x: usize, y:usize, vec: &mut Vec<T>) -> (T, T){
-    assert!(x!=y);
-    let mut pair = vec![x, y];
-    pair.sort();
-    let j = vec.remove(pair[0]);
-    let k = vec.remove(pair[1]-1);
-    (j, k)
 }
 fn possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
     assert!(nodes.len()>1);
@@ -72,11 +72,7 @@ fn possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
 
     let mut possible_reductions: Vec<Vec<Node<u32>>> = vec![];
     for (x, y) in possible_pair_indices.into_iter() {
-        let mut nodes = nodes.clone();
-        let (l, r) = remove_two(x, y, &mut nodes);
-        let joined_node = Node::new_branch(l, r);
-        nodes.push(joined_node);
-        possible_reductions.push(nodes);
+        possible_reductions.push(join_pair_by_indices((x, y), nodes.clone()));
     }
     possible_reductions
 }
@@ -105,12 +101,18 @@ fn all_possible_reductions(nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
 //Regenerate PMF until you get one Huffman code beating another
 //Check shape of best Huffman code
 fn main() {
-    let leaves = vec![
-        Node::new_leaf(2, '🦀'),
-        Node::new_leaf(2, '🍉'),
-        Node::new_leaf(1, '🏅'),
-        Node::new_leaf(1, '🦬'),
-    ];
-    let huffman_codes = all_possible_reductions(leaves);
-    println!("{:#?}", huffman_codes);
+    for _ in 0..1000 {
+        let leaves = vec![
+            Node::new_leaf(2, '🦀'),
+            Node::new_leaf(2, '🦀'),
+            Node::new_leaf(2, '🦀'),
+            Node::new_leaf(2, '🦀'),
+            Node::new_leaf(2, '🦀'),
+            Node::new_leaf(2, '🦀'),
+            Node::new_leaf(2, '🦀'),
+            Node::new_leaf(2, '🦀'),
+        ];
+        let huffman_codes = all_possible_reductions(leaves);
+    }
+    //println!("{:#?}", huffman_codes);
 }
