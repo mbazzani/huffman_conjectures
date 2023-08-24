@@ -4,13 +4,13 @@ use std::ops::Add;
 #[derive(Debug, Clone)]
 pub enum NodeType<T> {
     Leaf { symbol: char },
-    Branch { left: Box<Node<T>>, right: Box<Node<T>> },
+    Branch(Box<[Node<T>; 2]>) ,
 }
 
 #[derive(Debug, Clone)]
 pub struct Node<T> {
     probability: T,
-    r#type: NodeType<T>,
+    node_type: NodeType<T>,
 }
 
 impl<T: PartialEq> PartialEq for Node<T> {
@@ -39,22 +39,19 @@ where T: Add<Output = T> + Copy {
     pub fn new_leaf(probability: T, symbol: char) -> Node<T> {
         Node {
             probability,
-            r#type: NodeType::Leaf { symbol }
+            node_type: NodeType::Leaf { symbol }
         }
     }
     pub fn new_branch(left: Node<T>, right: Node<T>) -> Node<T> {
         Node {
             probability: left.probability + right.probability,
-            r#type: NodeType::Branch { 
-                left: Box::new(left), 
-                right: Box::new(right), 
-            }
+            node_type: NodeType::Branch(Box::new([left, right]))
         }
     }
     pub fn probability(&self) -> T {
         self.probability
     }
     pub fn node_type(&self) -> &NodeType<T> {
-        &self.r#type
+        &self.node_type
     }
 }
