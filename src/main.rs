@@ -1,7 +1,8 @@
 mod node;
 use node::Node;
-use node::NodeType;
 use itertools::Itertools;
+use std::iter::{zip, repeat};
+
 
 fn construct_huffman(mut nodes: Vec<Node<u32>>) -> Option<Node<u32>> {
     loop {
@@ -12,57 +13,96 @@ fn construct_huffman(mut nodes: Vec<Node<u32>>) -> Option<Node<u32>> {
                 nodes.sort_by(|a, b| b.cmp(a));
                 let l: Node<u32> = nodes.pop().unwrap();
                 let r: Node<u32> = nodes.pop().unwrap();
-                nodes.push(join(l, r))
+                nodes.push(Node::new_branch(l, r))
             }
         }
     }
 }
 
-fn join(left: Node<u32>,  right: Node<u32>) -> Node<u32> {
-    Node::new_branch(left, right)
-}
-
-
-fn possible_pair_indices(length: u32) -> Vec<(u32, u32)> {
+fn pair_combinations_in_range(length: usize) -> Vec<(usize, usize)> {
     return (0..length).tuple_combinations::<(_,_)>().collect::<Vec<_>>()
 }
-fn join_pair(pair_indices: (u32, u32), nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
-    unimplemented!();
+fn join_pair(pair_index: (usize, usize), mut nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
+    let (l, r) = pair_index;
+    let left = nodes.remove(l); 
+    let right = nodes.remove(r); 
+    nodes.push(Node::new_branch(left, right));
+    nodes
 }
 
-fn get_possible_reductions(nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
-    let min: &Node<u32> = nodes.iter().min().unwrap();
-    let length = unimplemented!();
-    let pair_indices = (0..length)
-        .tuple_combinations::<(_,_)>()
-        .collect::<Vec<_>>();
-    for (first, second) in pair_indices {}
-    unimplemented!();
+fn count_same_sequence<T>(vec: &[T]) -> usize
+where T: Eq + Ord {
+    assert!(vec.windows(2).all(|w| w[0] <= w[1])); //sorted
+    let mut count: usize = 0;
+    for (i, elem) in vec.iter().enumerate() {
+        if (*elem)!=vec[0] { break; }
+        count=i;
+    }
+    count+1
 }
-
-fn get_all_huffman(leaves: Vec<Node<u32>>) -> Vec<Node<u32>> {
-    match leaves.len() {
-        0 | 1 => return leaves,
-        _ => {
-            let mut huffman_codes: Vec<Node<u32>> = vec![];
-            let min: &Node<u32> = leaves.iter().min().unwrap();
-            let (smallest_nodes, other_nodes): (Vec<_>, Vec<_>) =
-                leaves.clone().into_iter().partition(|x| x<=min);
-            let possible_combinations = smallest_nodes.into_iter()
-                    .tuple_combinations::<(_,_)>()
-                    .map(|(l, r)| join(l, r));
-            //let possible_combinations_ = possible_combinations.clone();
-            //println!("{:#?}", possible_combinations_.collect::<Vec<_>>());
-            //unimplemented!();
-            for joined_node in possible_combinations {
-                //let mut other_nodes_ = other_nodes.clone();
-                let mut possible_huffman_codes = 
-                    get_all_huffman([other_nodes.clone(), vec![joined_node]].concat());
-                huffman_codes.append(&mut possible_huffman_codes);
-            }
-            huffman_codes
+fn remove_two<T>(x: usize, y:usize, vec: &mut Vec<T>) -> (T, T){
+    assert!(x!=y);
+    let mut pair = vec![x, y];
+    pair.sort();
+    let j = vec.remove(pair[0]);
+    let k = vec.remove(pair[1]-1);
+    (j, k)
+}
+fn possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
+    assert!(nodes.len()>1);
+    nodes.sort();
+    let smallest_probability = nodes[0].probability();
+    let num_smallest_nodes = count_same_sequence(&nodes);
+    let mut num_next_smallest_nodes = 0;
+    for (i, node) in nodes.iter().enumerate() {
+        if node.probability() != smallest_probability {
+            num_next_smallest_nodes = count_same_sequence(&nodes[i..]);
+            break
+        }
+    }
+    println!("num_smallest_nodes = {num_smallest_nodes}");
+    println!("num_next_smallest_nodes = {num_next_smallest_nodes}");
+    //TODO: Move into own function?
+    let possible_pair_indices: Vec<(usize, usize)>;
+    match (num_smallest_nodes, num_next_smallest_nodes) {
+        (0, _) => panic!("Should be impossible because of the length assertion"),
+        (1, 0) => panic!("Should be impossible because of the length assertion"),
+        (1, 1) => possible_pair_indices = vec![(0, 1)],
+        (1, n) => possible_pair_indices = zip(repeat(0usize), 1..(n+1)).collect_vec(), //Fancy thing here
+        (n, _) => {
+            println!("n={n}");
+            possible_pair_indices = pair_combinations_in_range(n);//Normal pair thing
         },
     }
+    println!("nodes = {:#?}", nodes);
+    println!("possible_pair_indices = {:#?}", possible_pair_indices);
+
+    let mut possible_reductions: Vec<Vec<Node<u32>>> = vec![];
+    for (x, y) in possible_pair_indices.into_iter() {
+        let mut nodes = nodes.clone();
+        let (l, r) = remove_two(x, y, &mut nodes);
+        let joined_node = Node::new_branch(l, r);
+        nodes.push(joined_node);
+        possible_reductions.push(nodes);
+    }
+    possible_reductions
+}
+fn all_possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
+    let mut partial_reductions = vec![nodes];
+    let mut completed_reductions: Vec<Node<u32>> = vec![];
+    while !partial_reductions.is_empty() {
+        match partial_reductions.last().unwrap().len() {
+            0 | 1 => {
+                let mut last = partial_reductions.pop().unwrap();
+                completed_reductions.append(&mut last);
+            },
+            _ => {
+                let last = partial_reductions.pop().unwrap();
+                partial_reductions.append(&mut possible_reductions(last));
+            },
+        };
+    };
+    completed_reductions
 }
 
 
@@ -78,7 +118,7 @@ fn main() {
         Node::new_leaf(1, '🏅'),
         Node::new_leaf(1, '🦬'),
     ];
-    let huffman_codes = get_all_huffman(leaves);
+    let huffman_codes = all_possible_reductions(leaves);
     println!("{:#?}", huffman_codes);
     println!("Hello, world!");
     let vect = vec![1, 1, 1];

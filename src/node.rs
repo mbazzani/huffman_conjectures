@@ -51,8 +51,8 @@ where T: Add<Output = T> + Copy {
             }
         }
     }
-    pub fn probability(&self) -> &T {
-        &self.probability
+    pub fn probability(&self) -> T {
+        self.probability
     }
     pub fn node_type(&self) -> &NodeType<T> {
         &self.r#type
