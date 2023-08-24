@@ -60,22 +60,15 @@ fn possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
             break
         }
     }
-    println!("num_smallest_nodes = {num_smallest_nodes}");
-    println!("num_next_smallest_nodes = {num_next_smallest_nodes}");
     //TODO: Move into own function?
     let possible_pair_indices: Vec<(usize, usize)>;
     match (num_smallest_nodes, num_next_smallest_nodes) {
         (0, _) => panic!("Should be impossible because of the length assertion"),
         (1, 0) => panic!("Should be impossible because of the length assertion"),
         (1, 1) => possible_pair_indices = vec![(0, 1)],
-        (1, n) => possible_pair_indices = zip(repeat(0usize), 1..(n+1)).collect_vec(), //Fancy thing here
-        (n, _) => {
-            println!("n={n}");
-            possible_pair_indices = pair_combinations_in_range(n);//Normal pair thing
-        },
+        (1, n) => possible_pair_indices = zip(repeat(0usize), 1..(n+1)).collect_vec(),
+        (n, _) => possible_pair_indices = pair_combinations_in_range(n),
     }
-    println!("nodes = {:#?}", nodes);
-    println!("possible_pair_indices = {:#?}", possible_pair_indices);
 
     let mut possible_reductions: Vec<Vec<Node<u32>>> = vec![];
     for (x, y) in possible_pair_indices.into_iter() {
@@ -87,7 +80,7 @@ fn possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
     }
     possible_reductions
 }
-fn all_possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
+fn all_possible_reductions(nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
     let mut partial_reductions = vec![nodes];
     let mut completed_reductions: Vec<Node<u32>> = vec![];
     while !partial_reductions.is_empty() {
@@ -120,8 +113,4 @@ fn main() {
     ];
     let huffman_codes = all_possible_reductions(leaves);
     println!("{:#?}", huffman_codes);
-    println!("Hello, world!");
-    let vect = vec![1, 1, 1];
-    let combs: Vec<_> = vect.iter().tuple_combinations::<(_,_)>().collect();
-    println!("{:#?}", combs)
 }
