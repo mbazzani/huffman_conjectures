@@ -1,9 +1,45 @@
 mod node;
+mod code;
+use code::Code;
+use code::CodeWord;
+use code::CompetitiveOrd;
+use code::Depth;
 use node::Node;
+use std::collections::HashMap;
+use std::hash::Hash;
+use node::NodeType;
 use itertools::Itertools;
+use std::ops::Add;
 use std::iter::{zip, repeat};
 
+static ASCII_LOWER: [char; 26] = [
+    'a', 'b', 'c', 'd', 'e', 
+    'f', 'g', 'h', 'i', 'j', 
+    'k', 'l', 'm', 'n', 'o',
+    'p', 'q', 'r', 's', 't', 
+    'u', 'v', 'w', 'x', 'y', 
+    'z',
+];
 
+
+fn to_code<T>(node: &Node<T>) -> Code<T> 
+where T: Copy + Add<Output = T> + Eq + Hash + Ord {
+    to_code_helper(node, 0)
+}
+fn to_code_helper<T>(node: &Node<T>, depth: Depth) -> Code<T> 
+where T: Copy + Add<Output = T> + Eq + Hash + Ord {
+    let mut code: Code<T> = HashMap::new();
+    match node.node_type() {
+        NodeType::Leaf(symbol) => {
+            code.insert(CodeWord::new(*symbol, node.probability()), depth);
+        }
+        NodeType::Branch(children) => {
+            code.extend(to_code_helper(&children[0], depth+1));
+            code.extend(to_code_helper(&children[1], depth+1));
+        },
+    };
+    code
+}
 fn construct_huffman(mut nodes: Vec<Node<u32>>) -> Option<Node<u32>> {
     loop {
         match nodes.len() {
@@ -100,19 +136,47 @@ fn all_possible_reductions(nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
 //returning a vector of Huffman codes that you then join with the previous
 //Regenerate PMF until you get one Huffman code beating another
 //Check shape of best Huffman code
+fn max_depth(code: &Code<u32>) -> &Depth {
+    code.iter().max_by_key(|(_, &v)| v).unwrap().1
+}
+
 fn main() {
-    for _ in 0..1000 {
+    for _ in 0..1 {
         let leaves = vec![
-            Node::new_leaf(2, '🦀'),
-            Node::new_leaf(2, '🦀'),
-            Node::new_leaf(2, '🦀'),
-            Node::new_leaf(2, '🦀'),
-            Node::new_leaf(2, '🦀'),
-            Node::new_leaf(2, '🦀'),
-            Node::new_leaf(2, '🦀'),
-            Node::new_leaf(2, '🦀'),
+            Node::new_leaf(12, 'a'),
+            Node::new_leaf(12, 'b'),
+            Node::new_leaf(6, 'c'),
+            Node::new_leaf(2, 'd'),
+            Node::new_leaf(2, 'd'),
+            Node::new_leaf(1, 'd'),
+            Node::new_leaf(1, 'd'),
         ];
-        let huffman_codes = all_possible_reductions(leaves);
+        println!("Possible reductions: \n{:#?}", all_possible_reductions(leaves.clone()));
+        let huffman_codes: Vec<Code<u32>> = all_possible_reductions(leaves)
+            .iter().map(to_code).collect_vec();
+        match huffman_codes.len() {
+            0 => panic!("There should always exist a huffman code"),
+            1 => continue,
+            _ => (),
+        } //TODO: Check for actual ambiguitites?
+        let one_huffman_dominates_other = huffman_codes.iter()
+            .tuple_combinations::<(_,_)>()
+            .map(|(a, b)| a.beats(b))
+            .any(|b| b.unwrap());
+        if !one_huffman_dominates_other {
+            continue;
+        }
+        let tallest_huffman_code: &Code<u32> = huffman_codes.iter()
+            .min_by(|a, b| max_depth(a).cmp(&max_depth(b))).unwrap();
+        let better_codes = huffman_codes.iter()
+            .filter(|&a| a.beats(tallest_huffman_code).unwrap())
+            .collect_vec();
+        if better_codes.len()!=0 {
+            println!("Found a code that beats skinny code");
+            println!("Skinny code:");
+            println!("{:#?}", tallest_huffman_code);
+            println!("A better code:");
+            println!("{:#?}",better_codes[0]);
+        }
     }
-    //println!("{:#?}", huffman_codes);
 }
