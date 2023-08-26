@@ -4,7 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level=1
+incremental = true
+panic = 'unwind'
 
 [dependencies]
 num = "0.4"
 itertools = "0.11.0"
+rand = "0.8.5"
