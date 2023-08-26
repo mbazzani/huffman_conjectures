@@ -1,4 +1,3 @@
-use crate::Node;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::cmp::Ordering;
@@ -18,7 +17,7 @@ impl<T: Eq> PartialEq for CodeWord<T> {
 
 impl<T: Eq> Eq for CodeWord<T> {}
 
-pub type Depth = u8;
+pub type Depth = u32;
 pub type Code<T> = HashMap<CodeWord<T>, Depth>;
 
 impl<T> CodeWord<T> {
@@ -31,7 +30,7 @@ impl<T> CodeWord<T> {
 }
 
 pub trait CompetitiveOrd {
-    fn competitive_advantage(&self, other: &Self) -> Option<i64>;
+    fn competitive_advantage(&self, other: &Self) -> Option<u32>;
     fn beats(&self, other: &Self) -> Option<bool>;
     fn loses(&self, other: &Self) -> Option<bool>;
     fn ties(&self, other: &Self) -> Option<bool>;
@@ -39,14 +38,17 @@ pub trait CompetitiveOrd {
 
 impl CompetitiveOrd for Code<u32> {
     //TODO: Rewrite as closure because I'm not a filthy imperative programmer
-	fn competitive_advantage(&self, other: &Code<u32>) -> Option<i64> {
-	    let mut competitive_advantage: i64 = 0;
+	fn competitive_advantage(&self, other: &Code<u32>) -> Option<u32> {
+	    let mut competitive_advantage: u32 = 0;
 	    for (code_word, depth) in self {
 	        match depth.cmp(&other[code_word]) {
-	            Ordering::Greater => competitive_advantage += code_word.probability as i64,
-	            Ordering::Equal => (),
-	            Ordering::Less => competitive_advantage -= code_word.probability as i64,
-            }
+	            Ordering::Equal => competitive_advantage += code_word.probability,
+	            Ordering::Greater => (),
+	            Ordering::Less => {
+                    println!("{code_word.probability}");
+                    competitive_advantage -= code_word.probability;
+	            },
+            println!("{competitive_advantage}");
 	    }
 	    Some(competitive_advantage)
 	}

@@ -6,7 +6,8 @@ use std::ops::Add;
 pub enum NodeType<T> 
 where T: Copy + Add<Output = T> + Eq + Ord {
     Leaf(char),
-    Branch(Arc<[Node<T>; 2]>) , }
+    Branch(Arc<[Node<T>; 2]>), 
+}
 
 #[derive(Debug, Clone)]
 pub struct Node<T> 

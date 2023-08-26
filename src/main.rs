@@ -1,25 +1,15 @@
 mod node;
 mod code;
-use code::Code;
-use code::CodeWord;
-use code::CompetitiveOrd;
-use code::Depth;
-use node::Node;
+mod source;
+use source::Source;
+use code::{Code, CodeWord, CompetitiveOrd, Depth};
+use node::{Node, NodeType};
 use std::collections::HashMap;
+use std::process::exit;
 use std::hash::Hash;
-use node::NodeType;
 use itertools::Itertools;
 use std::ops::Add;
 use std::iter::{zip, repeat};
-
-static ASCII_LOWER: [char; 26] = [
-    'a', 'b', 'c', 'd', 'e', 
-    'f', 'g', 'h', 'i', 'j', 
-    'k', 'l', 'm', 'n', 'o',
-    'p', 'q', 'r', 's', 't', 
-    'u', 'v', 'w', 'x', 'y', 
-    'z',
-];
 
 
 fn to_code<T>(node: &Node<T>) -> Code<T> 
@@ -67,7 +57,8 @@ fn remove_two<T>(x: usize, y:usize, vec: &mut Vec<T>) -> (T, T){
     let k = vec.remove(pair[1]-1);
     (j, k)
 }
-fn join_pair_by_indices(pair_index: (usize, usize), mut nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
+fn join_pair_by_indices<T>(pair_index: (usize, usize), mut nodes: Vec<Node<T>>) -> Vec<Node<T>> 
+where T: Copy + Add<Output= T> + Ord {
     let (l, r) = pair_index;
     let (left, right) =  remove_two(l, r, &mut nodes);
     nodes.push(Node::new_branch(left, right));
@@ -84,7 +75,8 @@ where T: Eq + Ord {
     }
     count+1
 }
-fn possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
+fn possible_reductions<T>(mut nodes: Vec<Node<T>>) -> Vec<Vec<Node<T>>> 
+where T: Add<Output = T> + Copy + Ord {
     assert!(nodes.len()>1);
     nodes.sort();
     let smallest_probability = nodes[0].probability();
@@ -106,15 +98,16 @@ fn possible_reductions(mut nodes: Vec<Node<u32>>) -> Vec<Vec<Node<u32>>> {
         (n, _) => possible_pair_indices = pair_combinations_in_range(n),
     }
 
-    let mut possible_reductions: Vec<Vec<Node<u32>>> = vec![];
+    let mut possible_reductions: Vec<Vec<Node<T>>> = vec![];
     for (x, y) in possible_pair_indices.into_iter() {
         possible_reductions.push(join_pair_by_indices((x, y), nodes.clone()));
     }
     possible_reductions
 }
-fn all_possible_reductions(nodes: Vec<Node<u32>>) -> Vec<Node<u32>> {
+fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>> 
+where T: Add<Output = T> + Copy + Ord {
     let mut partial_reductions = vec![nodes];
-    let mut completed_reductions: Vec<Node<u32>> = vec![];
+    let mut completed_reductions: Vec<Node<T>> = vec![];
     while !partial_reductions.is_empty() {
         match partial_reductions.last().unwrap().len() {
             0 | 1 => {
@@ -141,17 +134,19 @@ fn max_depth(code: &Code<u32>) -> &Depth {
 }
 
 fn main() {
-    for _ in 0..1 {
-        let leaves = vec![
-            Node::new_leaf(12, 'a'),
-            Node::new_leaf(12, 'b'),
-            Node::new_leaf(6, 'c'),
-            Node::new_leaf(2, 'd'),
-            Node::new_leaf(2, 'd'),
-            Node::new_leaf(1, 'd'),
-            Node::new_leaf(1, 'd'),
-        ];
-        println!("Possible reductions: \n{:#?}", all_possible_reductions(leaves.clone()));
+    let mut num_good_sources_tested: u32 = 0;
+    while num_good_sources_tested < 1000 {
+        let leaves = Source::new(12).to_leaves_vec();
+//        vec![
+//            Node::new_leaf(12, 'a'),
+//            Node::new_leaf(12, 'b'),
+//            Node::new_leaf(6, 'c'),
+//            Node::new_leaf(2, 'd'),
+//            Node::new_leaf(2, 'e'),
+//            Node::new_leaf(1, 'f'),
+//            Node::new_leaf(1, 'g'),
+//        ];
+        //println!("Possible reductions: \n{:#?}", all_possible_reductions(leaves.clone()));
         let huffman_codes: Vec<Code<u32>> = all_possible_reductions(leaves)
             .iter().map(to_code).collect_vec();
         match huffman_codes.len() {
@@ -163,9 +158,10 @@ fn main() {
             .tuple_combinations::<(_,_)>()
             .map(|(a, b)| a.beats(b))
             .any(|b| b.unwrap());
-        if !one_huffman_dominates_other {
-            continue;
-        }
+        if one_huffman_dominates_other {
+            //println!("Found pmf where one huffman code dominates another");
+            num_good_sources_tested+=1;
+        } else { continue };
         let tallest_huffman_code: &Code<u32> = huffman_codes.iter()
             .min_by(|a, b| max_depth(a).cmp(&max_depth(b))).unwrap();
         let better_codes = huffman_codes.iter()
@@ -177,6 +173,7 @@ fn main() {
             println!("{:#?}", tallest_huffman_code);
             println!("A better code:");
             println!("{:#?}",better_codes[0]);
+            exit(0)
         }
     }
 }
