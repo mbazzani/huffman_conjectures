@@ -52,7 +52,6 @@ where T: Copy + Add<Output = T> + Eq + Ord {
         Node {
             probability: left.probability + right.probability,
             node_type: NodeType::Branch(Arc::new([left, right])),
-
         }
     }
     pub fn probability(&self) -> T {

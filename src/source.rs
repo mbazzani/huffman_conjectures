@@ -1,4 +1,4 @@
-use crate::{Node, max_depth};
+use crate::Node;
 use rand::{Rng, thread_rng};
 use std::iter::zip;
 use itertools::Itertools;
@@ -14,7 +14,8 @@ static ASCII_LOWER: [char; 26] = [
     'z',
 ];
 
-static PROBABILITY_GRANULARITY: u32 = 100;
+//TODO: Resize dynamically
+static PROBABILITY_GRANULARITY: u32 = 120;
 
 impl Source<u32> {
     fn uniform_int_probabilities(len: usize) -> Vec<u32> {
