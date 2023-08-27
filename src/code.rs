@@ -1,12 +1,14 @@
-use rustc_hash::FxHashMap;
 use std::hash::Hash;
 use std::cmp::Ordering;
+use std::ops::Add;
+use num::traits::int;
+use rustc_hash::FxHashMap;
+use crate::node::{Node, NodeType};
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 use xxhash_rust::xxh3::xxh3_64;
 use xxhash_rust::xxh3::Xxh3Builder;
 use xxhash_rust::xxh3::Xxh3;
-
 #[derive(Debug, Clone, Hash)]
 pub struct CodeWord<T> {
     source_symbol: char,
@@ -22,8 +24,9 @@ impl<T: Eq> PartialEq for CodeWord<T> {
 
 impl<T: Eq> Eq for CodeWord<T> {}
 
+pub type Probability = u32;
 pub type Depth = u8;
-pub type Code<T> = HashMap<CodeWord<T>, Depth, BuildHasherDefault<Xxh3>>;
+pub type Code<T> = HashMap<CodeWord<T>, Depth, Xxh3Builder>;
 
 impl<T> CodeWord<T> {
     pub fn new(source_symbol: char, probability: T) -> CodeWord<T> {
@@ -42,8 +45,8 @@ pub trait CompetitiveOrd {
 }
 
 //TODO: Make generic
-impl CompetitiveOrd for Code<u32> {
-	fn competitive_advantage(&self, other: &Code<u32>) -> Option<i64> {
+impl CompetitiveOrd for Code<Probability> {
+	fn competitive_advantage(&self, other: &Code<Probability>) -> Option<i64> {
         let competitive_advantage: i64 = 
             self.iter()
             .map(|(code_word, depth)| 
@@ -72,6 +75,41 @@ pub trait New {
 
 impl<T> New for Code<T> {
     fn new() -> Self {
-        HashMap::with_hasher(BuildHasherDefault::default())
+        HashMap::with_hasher(Xxh3Builder::default())
+    }
+}
+
+pub trait FromNode {
+    fn from_node(node: &Node<Probability>) -> Self;
+
+}
+
+fn from_node_helper(node: &Node<Probability>, depth: Depth) -> Vec<(CodeWord<Probability>, Depth)> {
+    let mut code: Vec<(CodeWord<Probability>, Depth)> = vec![];
+    match node.node_type() {
+        NodeType::Leaf(symbol) => {
+            code.push((CodeWord::new(*symbol, node.probability()), depth));
+        }
+        NodeType::Branch(children) => {
+            code.append(&mut from_node_helper(&children[0], depth+1));
+            code.append(&mut from_node_helper(&children[1], depth+1));
+        },
+    };
+    code
+}
+
+impl FromNode for Code<Probability> {
+	fn from_node(node: &Node<Probability>) -> Code<Probability> {
+	    from_node_helper(node, 0).into_iter().collect()
+	}
+}
+
+pub trait MaxDepth {
+    fn max_depth(&self) -> &Depth;
+}
+
+impl MaxDepth for Code<Probability> {
+    fn max_depth(&self) -> &Depth {
+        self.iter().max_by_key(|(_, &v)| v).unwrap().1
     }
 }
