@@ -5,19 +5,11 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use xxhash_rust::xxh3::Xxh3Builder;
 
-#[derive(Debug, Clone, Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct CodeWord<T> {
     source_symbol: char,
     probability: T,
 }
-
-impl<T: Eq> PartialEq for CodeWord<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.probability == other.probability && self.source_symbol == other.source_symbol
-    }
-}
-
-impl<T: Eq> Eq for CodeWord<T> {}
 
 pub type Probability = u32;
 pub type Depth = u8;

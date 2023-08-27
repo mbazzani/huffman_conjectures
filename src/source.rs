@@ -40,9 +40,12 @@ impl Source<u32> {
     pub fn new(size: usize) -> Source<u32> {
         Source(zip(ASCII, Source::uniform_int_probabilities(size)).collect_vec())
     }
+    #[allow(dead_code)]
     pub fn from_vec(vec: Vec<(char, u32)>) -> Source<u32> {
         Source(vec)
     }
+
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.0.len()
     }

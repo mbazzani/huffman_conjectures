@@ -1,18 +1,15 @@
-use crate::code::{Code, CodeWord, CompetitiveOrd, Depth, FromNode, MaxDepth, New};
-use crate::node::{Node, NodeType};
+use crate::code::{Code, CompetitiveOrd, FromNode, MaxDepth};
+use crate::node::Node;
 use crate::source::Source;
 
 use itertools::Itertools;
-use rayon::prelude::*;
-use std::hash::Hash;
 use std::iter::{repeat, zip};
 use std::ops::Add;
-use std::process::exit;
 
 fn pair_combinations_in_range(length: usize) -> Vec<(usize, usize)> {
-    return (0..length)
+    (0..length)
         .tuple_combinations::<(_, _)>()
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
 }
 
 fn remove_two<T>(x: usize, y: usize, vec: &mut Vec<T>) -> (T, T) {
@@ -52,7 +49,7 @@ fn possible_reductions<T>(mut nodes: Vec<Node<T>>) -> Vec<Vec<Node<T>>>
 where
     T: Add<Output = T> + Copy + Ord,
 {
-    assert!(nodes.len() > 1);
+    assert!(!nodes.is_empty());
     nodes.sort();
     let smallest_probability = nodes[0].probability();
     let num_smallest_nodes = count_same_sequence(&nodes);
@@ -64,14 +61,14 @@ where
         }
     }
     //TODO: Move into own function?
-    let possible_pair_indices: Vec<(usize, usize)>;
-    match (num_smallest_nodes, num_next_smallest_nodes) {
-        (0, _) => panic!("Should be impossible because of the length assertion"),
-        (1, 0) => panic!("Should be impossible because of the length assertion"),
-        (1, 1) => possible_pair_indices = vec![(0, 1)],
-        (1, n) => possible_pair_indices = zip(repeat(0usize), 1..(n + 1)).collect_vec(),
-        (n, _) => possible_pair_indices = pair_combinations_in_range(n),
-    }
+    let possible_pair_indices: Vec<(usize, usize)> = 
+        match (num_smallest_nodes, num_next_smallest_nodes) {
+		        (0, _) => panic!("Impossible because of the length assertion"),
+		        (1, 0) => panic!("Impossible because of the length assertion"),
+		        (1, 1) => vec![(0, 1)],
+		        (1, n) => zip(repeat(0usize), 1..(n + 1)).collect_vec(),
+		        (n, _) => pair_combinations_in_range(n),
+        };
 
     let mut possible_reductions: Vec<Vec<Node<T>>> = vec![];
     for (x, y) in possible_pair_indices.into_iter() {
@@ -109,7 +106,7 @@ pub fn no_huffman_code_competitively_dominates_skinniest(
         let leaves = Source::new(source_size).to_leaves_vec();
         let huffman_codes: Vec<Code<u32>> = all_possible_reductions(leaves)
             .iter()
-            .map(|node| Code::from_node(node))
+            .map(Code::from_node)
             .collect_vec();
         match huffman_codes.len() {
             0 => panic!("There should always exist a huffman code"),
@@ -129,13 +126,13 @@ pub fn no_huffman_code_competitively_dominates_skinniest(
         };
         let tallest_huffman_code: &Code<u32> = huffman_codes
             .iter()
-            .max_by(|a, b| a.max_depth().cmp(&b.max_depth()))
+            .max_by(|a, b| a.max_depth().cmp(b.max_depth()))
             .unwrap();
         let better_codes = huffman_codes
             .iter()
             .filter(|&a| a.beats(tallest_huffman_code).unwrap())
             .collect_vec();
-        if better_codes.len() != 0 {
+        if !better_codes.is_empty() {
             println!("Found a code that beats skinny code");
             println!("Skinny code:");
             println!("{:#?}", tallest_huffman_code);

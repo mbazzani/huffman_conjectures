@@ -73,7 +73,7 @@ where
     pub fn node_type(&self) -> &NodeType<T> {
         &self.node_type
     }
-
+    #[allow(dead_code)]
     pub fn same_as(&self, other: &Node<T>) -> bool {
         if self.probability != other.probability {
             return false;
@@ -89,6 +89,7 @@ where
 }
 
 impl Node<u32> {
+    #[allow(dead_code)]
     pub fn new_huffman(source: &Source<u32>) -> Option<Node<u32>> {
         let mut nodes = source.to_leaves_vec();
         loop {
