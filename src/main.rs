@@ -1,7 +1,7 @@
-mod node;
 mod code;
-mod source;
 mod conjectures;
+mod node;
+mod source;
 
 use crate::conjectures::no_huffman_code_competitively_dominates_skinniest;
 use crate::node::Node;

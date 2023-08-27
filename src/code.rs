@@ -1,8 +1,8 @@
 use crate::node::{Node, NodeType};
 
-use std::hash::Hash;
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::hash::Hash;
 use xxhash_rust::xxh3::Xxh3Builder;
 
 #[derive(Debug, Clone, Hash)]
@@ -13,8 +13,7 @@ pub struct CodeWord<T> {
 
 impl<T: Eq> PartialEq for CodeWord<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.probability == other.probability 
-            && self.source_symbol == other.source_symbol
+        self.probability == other.probability && self.source_symbol == other.source_symbol
     }
 }
 
@@ -26,10 +25,10 @@ pub type Code<T> = HashMap<CodeWord<T>, Depth, Xxh3Builder>;
 
 impl<T> CodeWord<T> {
     pub fn new(source_symbol: char, probability: T) -> CodeWord<T> {
-		CodeWord {
-		    source_symbol,
-		    probability,
-		}
+        CodeWord {
+            source_symbol,
+            probability,
+        }
     }
 }
 
@@ -41,18 +40,17 @@ pub trait CompetitiveOrd {
 }
 
 impl CompetitiveOrd for Code<Probability> {
-	fn competitive_advantage(&self, other: &Code<Probability>) -> Option<i64> {
-        let competitive_advantage: i64 = 
-            self.iter()
-            .map(|(code_word, depth)| 
-                match depth.cmp(&other[code_word]) {
-                    Ordering::Less => code_word.probability as i64,
-                    Ordering::Equal => 0,
-                    Ordering::Greater => -(code_word.probability as i64),
-                }
-            ).sum();
-	    Some(competitive_advantage)
-	}
+    fn competitive_advantage(&self, other: &Code<Probability>) -> Option<i64> {
+        let competitive_advantage: i64 = self
+            .iter()
+            .map(|(code_word, depth)| match depth.cmp(&other[code_word]) {
+                Ordering::Less => code_word.probability as i64,
+                Ordering::Equal => 0,
+                Ordering::Greater => -(code_word.probability as i64),
+            })
+            .sum();
+        Some(competitive_advantage)
+    }
     fn beats(&self, other: &Self) -> Option<bool> {
         Some(self.competitive_advantage(other)? > 0)
     }
@@ -76,7 +74,6 @@ impl<T> New for Code<T> {
 
 pub trait FromNode {
     fn from_node(node: &Node<Probability>) -> Self;
-
 }
 
 fn from_node_helper(node: &Node<Probability>, depth: Depth) -> Vec<(CodeWord<Probability>, Depth)> {
@@ -86,17 +83,17 @@ fn from_node_helper(node: &Node<Probability>, depth: Depth) -> Vec<(CodeWord<Pro
             code.push((CodeWord::new(*symbol, node.probability()), depth));
         }
         NodeType::Branch(children) => {
-            code.append(&mut from_node_helper(&children[0], depth+1));
-            code.append(&mut from_node_helper(&children[1], depth+1));
-        },
+            code.append(&mut from_node_helper(&children[0], depth + 1));
+            code.append(&mut from_node_helper(&children[1], depth + 1));
+        }
     };
     code
 }
 
 impl FromNode for Code<Probability> {
-	fn from_node(node: &Node<Probability>) -> Code<Probability> {
-	    from_node_helper(node, 0).into_iter().collect()
-	}
+    fn from_node(node: &Node<Probability>) -> Code<Probability> {
+        from_node_helper(node, 0).into_iter().collect()
+    }
 }
 
 pub trait MaxDepth {
@@ -116,10 +113,14 @@ mod tests {
 
     #[test]
     fn from_node_test() {
-        let huff = Node::new_huffman(
-            &Source::from_vec(
-                vec![('a',1), ('b',2), ('c',3), ('d',4), ('e',5)])
-            ).unwrap();
+        let huff = Node::new_huffman(&Source::from_vec(vec![
+            ('a', 1),
+            ('b', 2),
+            ('c', 3),
+            ('d', 4),
+            ('e', 5),
+        ]))
+        .unwrap();
         let mut huff_code = Code::new();
         huff_code.insert(CodeWord::new('a', 1), 3);
         huff_code.insert(CodeWord::new('b', 2), 3);
