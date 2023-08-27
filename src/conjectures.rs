@@ -108,7 +108,7 @@ pub fn no_huffman_code_competitively_dominates_skinniest(source_size: usize, sou
 	        sources_tested+=1;
 	    } else { continue };
 	    let tallest_huffman_code: &Code<u32> = huffman_codes.iter()
-	        .min_by(|a, b| a.max_depth().cmp(&b.max_depth())).unwrap();
+	        .max_by(|a, b| a.max_depth().cmp(&b.max_depth())).unwrap();
 	    let better_codes = huffman_codes.iter()
 	        .filter(|&a| a.beats(tallest_huffman_code).unwrap())
 	        .collect_vec();

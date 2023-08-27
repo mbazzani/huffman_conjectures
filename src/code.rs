@@ -40,16 +40,15 @@ pub trait CompetitiveOrd {
     fn ties(&self, other: &Self) -> Option<bool>;
 }
 
-//TODO: Make generic
 impl CompetitiveOrd for Code<Probability> {
 	fn competitive_advantage(&self, other: &Code<Probability>) -> Option<i64> {
         let competitive_advantage: i64 = 
             self.iter()
             .map(|(code_word, depth)| 
                 match depth.cmp(&other[code_word]) {
-                    Ordering::Greater => code_word.probability as i64,
+                    Ordering::Less => code_word.probability as i64,
                     Ordering::Equal => 0,
-                    Ordering::Less => -(code_word.probability as i64),
+                    Ordering::Greater => -(code_word.probability as i64),
                 }
             ).sum();
 	    Some(competitive_advantage)
@@ -107,5 +106,62 @@ pub trait MaxDepth {
 impl MaxDepth for Code<Probability> {
     fn max_depth(&self) -> &Depth {
         self.iter().max_by_key(|(_, &v)| v).unwrap().1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::source::Source;
+
+    #[test]
+    fn from_node_test() {
+        let huff = Node::new_huffman(
+            &Source::from_vec(
+                vec![('a',1), ('b',2), ('c',3), ('d',4), ('e',5)])
+            ).unwrap();
+        let mut huff_code = Code::new();
+        huff_code.insert(CodeWord::new('a', 1), 3);
+        huff_code.insert(CodeWord::new('b', 2), 3);
+        huff_code.insert(CodeWord::new('c', 3), 2);
+        huff_code.insert(CodeWord::new('d', 4), 2);
+        huff_code.insert(CodeWord::new('e', 5), 2);
+        assert_eq!(Code::from_node(&huff), huff_code);
+    }
+
+    #[test]
+    fn max_depth_test() {
+        let mut huff_code = Code::new();
+        huff_code.insert(CodeWord::new('a', 1), 5);
+        huff_code.insert(CodeWord::new('b', 1), 1);
+        huff_code.insert(CodeWord::new('c', 1), 2);
+        huff_code.insert(CodeWord::new('d', 1), 8);
+        huff_code.insert(CodeWord::new('e', 1), 7);
+        assert_eq!(*huff_code.max_depth(), 8);
+    }
+
+    #[test]
+    fn competitive_ord_test() {
+        let mut code_a = Code::new();
+        code_a.insert(CodeWord::new('a', 1), 3);
+        code_a.insert(CodeWord::new('b', 2), 3);
+        code_a.insert(CodeWord::new('c', 3), 2);
+        code_a.insert(CodeWord::new('d', 4), 1);
+
+        let mut code_b = Code::new();
+        code_b.insert(CodeWord::new('a', 1), 3);
+        code_b.insert(CodeWord::new('b', 2), 2);
+        code_b.insert(CodeWord::new('c', 3), 1);
+        code_b.insert(CodeWord::new('d', 4), 3);
+
+        let mut code_c = Code::new();
+        code_c.insert(CodeWord::new('a', 1), 3);
+        code_c.insert(CodeWord::new('b', 2), 1);
+        code_c.insert(CodeWord::new('c', 3), 3);
+        code_c.insert(CodeWord::new('d', 4), 2);
+
+        assert!(code_b.beats(&code_a).unwrap());
+        assert!(code_c.beats(&code_b).unwrap());
+        assert!(code_a.beats(&code_c).unwrap());
     }
 }
