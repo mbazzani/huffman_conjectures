@@ -5,13 +5,20 @@ use itertools::Itertools;
 
 pub struct Source<T>(Vec<(char, T)>);
 
-static ASCII_LOWER: [char; 26] = [
+static ASCII: [char; 52] = [
     'a', 'b', 'c', 'd', 'e', 
     'f', 'g', 'h', 'i', 'j', 
     'k', 'l', 'm', 'n', 'o',
     'p', 'q', 'r', 's', 't', 
     'u', 'v', 'w', 'x', 'y', 
     'z',
+
+    'A', 'B', 'C', 'D', 'E',
+    'F', 'G', 'H', 'I', 'J',
+    'K', 'L', 'M', 'N', 'O',
+    'P', 'Q', 'R', 'S', 'T',
+    'U', 'V', 'W', 'X', 'Y',
+    'Z'
 ];
 
 //TODO: Resize dynamically
@@ -27,16 +34,18 @@ impl Source<u32> {
         rand_values.sort();
         rand_values[0] = 0;
         rand_values[len] = max_probability;
-        let mut probabilities = vec![];
-        for i in 1..rand_values.len() {
-            probabilities.push(rand_values[i] - rand_values[i-1]);
-        }
+        let probabilities = rand_values
+            .iter()
+            .tuple_windows()
+            .map(|(a, b)| b-a)
+            .collect_vec();
         assert!(probabilities.len()==len);
         probabilities
     }
+
     pub fn new(size: usize) -> Source<u32> {
         Source(zip(
-                ASCII_LOWER, 
+                ASCII, 
                 Source::uniform_int_probabilities(size),
             ).collect_vec())
     }
