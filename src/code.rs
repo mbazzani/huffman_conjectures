@@ -1,7 +1,11 @@
-use crate::Node;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::hash::Hash;
 use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::hash::BuildHasherDefault;
+use xxhash_rust::xxh3::xxh3_64;
+use xxhash_rust::xxh3::Xxh3Builder;
+use xxhash_rust::xxh3::Xxh3;
 
 #[derive(Debug, Clone, Hash)]
 pub struct CodeWord<T> {
@@ -19,7 +23,7 @@ impl<T: Eq> PartialEq for CodeWord<T> {
 impl<T: Eq> Eq for CodeWord<T> {}
 
 pub type Depth = u8;
-pub type Code<T> = HashMap<CodeWord<T>, Depth>;
+pub type Code<T> = HashMap<CodeWord<T>, Depth, BuildHasherDefault<Xxh3>>;
 
 impl<T> CodeWord<T> {
     pub fn new(source_symbol: char, probability: T) -> CodeWord<T> {
@@ -37,17 +41,18 @@ pub trait CompetitiveOrd {
     fn ties(&self, other: &Self) -> Option<bool>;
 }
 
+//TODO: Make generic
 impl CompetitiveOrd for Code<u32> {
-    //TODO: Rewrite as closure because I'm not a filthy imperative programmer
 	fn competitive_advantage(&self, other: &Code<u32>) -> Option<i64> {
-	    let mut competitive_advantage: i64 = 0;
-	    for (code_word, depth) in self {
-	        match depth.cmp(&other[code_word]) {
-	            Ordering::Greater => competitive_advantage += code_word.probability as i64,
-	            Ordering::Equal => (),
-	            Ordering::Less => competitive_advantage -= code_word.probability as i64,
-            }
-	    }
+        let competitive_advantage: i64 = 
+            self.iter()
+            .map(|(code_word, depth)| 
+                match depth.cmp(&other[code_word]) {
+                    Ordering::Greater => code_word.probability as i64,
+                    Ordering::Equal => 0,
+                    Ordering::Less => -(code_word.probability as i64),
+                }
+            ).sum();
 	    Some(competitive_advantage)
 	}
     fn beats(&self, other: &Self) -> Option<bool> {
@@ -58,5 +63,15 @@ impl CompetitiveOrd for Code<u32> {
     }
     fn ties(&self, other: &Self) -> Option<bool> {
         Some(self.competitive_advantage(other)? == 0)
+    }
+}
+
+pub trait New {
+    fn new() -> Self;
+}
+
+impl<T> New for Code<T> {
+    fn new() -> Self {
+        HashMap::with_hasher(BuildHasherDefault::default())
     }
 }
