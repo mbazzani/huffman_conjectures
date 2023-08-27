@@ -61,13 +61,13 @@ where
         }
     }
     //TODO: Move into own function?
-    let possible_pair_indices: Vec<(usize, usize)> = 
+    let possible_pair_indices: Vec<(usize, usize)> =
         match (num_smallest_nodes, num_next_smallest_nodes) {
-		        (0, _) => panic!("Impossible because of the length assertion"),
-		        (1, 0) => panic!("Impossible because of the length assertion"),
-		        (1, 1) => vec![(0, 1)],
-		        (1, n) => zip(repeat(0usize), 1..(n + 1)).collect_vec(),
-		        (n, _) => pair_combinations_in_range(n),
+            (0, _) => panic!("Impossible because of the length assertion"),
+            (1, 0) => panic!("Impossible because of the length assertion"),
+            (1, 1) => vec![(0, 1)],
+            (1, n) => zip(repeat(0usize), 1..(n + 1)).collect_vec(),
+            (n, _) => pair_combinations_in_range(n),
         };
 
     let mut possible_reductions: Vec<Vec<Node<T>>> = vec![];
