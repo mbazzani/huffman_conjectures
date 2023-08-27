@@ -1,5 +1,6 @@
-use std::cmp::Ordering;
 use crate::source::Source;
+
+use std::cmp::Ordering;
 use std::sync::Arc;
 use std::ops::Add;
 

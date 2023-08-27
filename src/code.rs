@@ -1,14 +1,10 @@
+use crate::node::{Node, NodeType};
+
 use std::hash::Hash;
 use std::cmp::Ordering;
-use std::ops::Add;
-use num::traits::int;
-use rustc_hash::FxHashMap;
-use crate::node::{Node, NodeType};
 use std::collections::HashMap;
-use std::hash::BuildHasherDefault;
-use xxhash_rust::xxh3::xxh3_64;
 use xxhash_rust::xxh3::Xxh3Builder;
-use xxhash_rust::xxh3::Xxh3;
+
 #[derive(Debug, Clone, Hash)]
 pub struct CodeWord<T> {
     source_symbol: char,

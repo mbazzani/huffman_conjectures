@@ -1,4 +1,5 @@
 use crate::Node;
+
 use rand::{Rng, thread_rng};
 use std::iter::zip;
 use itertools::Itertools;
