@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use crate::source::Source;
 use std::sync::Arc;
 use std::ops::Add;
 
@@ -59,5 +60,23 @@ where T: Copy + Add<Output = T> + Eq + Ord {
     }
     pub fn node_type(&self) -> &NodeType<T> {
         &self.node_type
+    }
+}
+
+impl Node<u32> {
+    pub fn new_huffman(source: &Source<u32>) -> Option<Node<u32>> {
+        let mut nodes = source.to_leaves_vec();
+	    loop {
+	        match nodes.len() {
+	            0 => return None,
+	            1 => return Some(nodes[0].clone()),
+	            _ => {
+	                nodes.sort_by(|a, b| b.cmp(a));
+	                let l: Node<u32> = nodes.pop().unwrap();
+	                let r: Node<u32> = nodes.pop().unwrap();
+	                nodes.push(Node::new_branch(l, r))
+	            }
+	        }
+	    }
     }
 }
