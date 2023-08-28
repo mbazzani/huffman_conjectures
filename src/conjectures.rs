@@ -3,79 +3,85 @@ use crate::node::Node;
 use crate::source::Source;
 
 use itertools::Itertools;
-use std::iter::{repeat, zip};
+use std::iter::{once, repeat, zip};
 use std::ops::Add;
-
-fn pair_combinations_in_range(length: usize) -> Vec<(usize, usize)> {
-    (0..length)
-        .tuple_combinations::<(_, _)>()
-        .collect::<Vec<_>>()
-}
 
 fn remove_two<T>(x: usize, y: usize, vec: &mut Vec<T>) -> (T, T) {
     assert!(x != y);
-    let mut pair = vec![x, y];
-    pair.sort();
-    let j = vec.remove(pair[0]);
-    let k = vec.remove(pair[1] - 1);
+    let (first, second) = if x < y { (x, y) } else { (y, x) };
+
+    let j = vec.remove(first);
+    let k = vec.remove(second - 1);
     (j, k)
 }
 
-fn join_pair_by_indices<T>(pair_index: (usize, usize), mut nodes: Vec<Node<T>>) -> Vec<Node<T>>
+fn join_nodes_by_indices<T>(pair_index: (usize, usize), mut nodes: Vec<Node<T>>) -> Vec<Node<T>>
 where
     T: Copy + Add<Output = T> + Ord,
 {
-    let (l, r) = pair_index;
-    let (left, right) = remove_two(l, r, &mut nodes);
+    let (left, right) = remove_two(pair_index.0, pair_index.1, &mut nodes);
     nodes.push(Node::new_branch(left, right));
     nodes
 }
 
-fn count_same_sequence<T>(vec: &[T]) -> usize
-where
-    T: Eq + Ord,
-{
-    assert!(vec.windows(2).all(|w| w[0] <= w[1])); //sorted
-    let mut count: usize = 0;
-    for (i, elem) in vec.iter().enumerate() {
-        if (*elem) != vec[0] {
-            break;
-        }
-        count = i;
-    }
-    count + 1
-}
 fn possible_reductions<T>(mut nodes: Vec<Node<T>>) -> Vec<Vec<Node<T>>>
 where
     T: Add<Output = T> + Copy + Ord,
 {
     assert!(!nodes.is_empty());
     nodes.sort();
-    let smallest_probability = nodes[0].probability();
-    let num_smallest_nodes = count_same_sequence(&nodes);
-    let mut num_next_smallest_nodes = 0;
-    for (i, node) in nodes.iter().enumerate() {
-        if node.probability() != smallest_probability {
-            num_next_smallest_nodes = count_same_sequence(&nodes[i..]);
-            break;
-        }
-    }
-    //TODO: Move into own function?
-    let possible_pair_indices: Vec<(usize, usize)> =
-        match (num_smallest_nodes, num_next_smallest_nodes) {
+    let num_smallest_nodes = nodes.iter().take_while(|&node| *node == nodes[0]).count();
+    let num_second_smallest_nodes = nodes[num_smallest_nodes..]
+        .iter()
+        .take_while(|&node| *node == nodes[num_smallest_nodes])
+        .count();
+
+    let possible_pair_indices: Box<dyn Iterator<Item = (usize, usize)>> =
+        match (num_smallest_nodes, num_second_smallest_nodes) {
             (0, _) => panic!("Impossible because of the length assertion"),
             (1, 0) => panic!("Impossible because of the length assertion"),
-            (1, 1) => vec![(0, 1)],
-            (1, n) => zip(repeat(0usize), 1..(n + 1)).collect_vec(),
-            (n, _) => pair_combinations_in_range(n),
+            (1, 1) => Box::new(once((0, 1))),
+            (1, n) => Box::new(zip(repeat(0usize), 1..(n + 1))),
+            (n, _) => Box::new((0..n).tuple_combinations::<(_, _)>()),
         };
 
-    let mut possible_reductions: Vec<Vec<Node<T>>> = vec![];
-    for (x, y) in possible_pair_indices.into_iter() {
-        possible_reductions.push(join_pair_by_indices((x, y), nodes.clone()));
-    }
-    possible_reductions
+    possible_pair_indices
+        .map(|pair| join_nodes_by_indices(pair, nodes.clone()))
+        .collect()
 }
+
+//TODO: rewrite to use iterators
+
+//fn possible_reductions<T>(mut nodes: Vec<Node<T>>) -> Vec<Vec<Node<T>>>
+//where
+//    T: Add<Output = T> + Copy + Ord,
+//{
+//    match nodes.len() {
+//        0 | 1 => return vec![nodes],
+//        _ => (),
+//    }
+//
+//    nodes.sort();
+//    let num_smallest_nodes = nodes.iter().take_while(|&node| *node == nodes[0]).count();
+//    let num_second_smallest_nodes = nodes[num_smallest_nodes..]
+//        .iter()
+//        .take_while(|&node| *node == nodes[num_smallest_nodes])
+//        .count();
+//
+//    let possible_pair_indices: Box<dyn Iterator<Item = (usize, usize)>> =
+//        match (num_smallest_nodes, num_second_smallest_nodes) {
+//            (0, _) => panic!("Impossible because of the length assertion"),
+//            (1, 0) => panic!("Impossible because of the length assertion"),
+//            (1, 1) => Box::new(once((0, 1))),
+//            (1, n) => Box::new(zip(repeat(0usize), 1..(n + 1))),
+//            (n, _) => Box::new((0..n).tuple_combinations::<(_, _)>()),
+//        };
+//
+//    possible_pair_indices
+//        .map(|pair| join_nodes_by_indices(pair, nodes.clone()))
+//        .collect()
+//}
+
 fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>>
 where
     T: Add<Output = T> + Copy + Ord,
@@ -96,6 +102,22 @@ where
     }
     completed_reductions
 }
+
+
+//Note that this breaks if there exists a zero probablity element
+//fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>>
+//where
+//    T: Add<Output = T> + Copy + Ord,
+//{
+//    let mut reductions = vec![nodes];
+//    while reductions.iter().all(|vec| vec.len()==1) {
+//        reductions = reductions
+//            .into_iter()
+//            .map(|nodes_list| possible_reductions(nodes_list))
+//            .collect_vec();
+//    }
+//    reductions.into_iter().flatten().collect_vec()
+//}
 
 pub fn no_huffman_code_competitively_dominates_skinniest(
     source_size: usize,
@@ -126,7 +148,7 @@ pub fn no_huffman_code_competitively_dominates_skinniest(
         };
         let tallest_huffman_code: &Code<u32> = huffman_codes
             .iter()
-            .max_by(|a, b| a.max_depth().cmp(b.max_depth()))
+            .max_by(|a, b| a.max_depth().cmp(&b.max_depth()))
             .unwrap();
         let better_codes = huffman_codes
             .iter()

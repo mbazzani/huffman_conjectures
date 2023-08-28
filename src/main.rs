@@ -7,7 +7,6 @@ use crate::conjectures::no_huffman_code_competitively_dominates_skinniest;
 use crate::node::Node;
 
 use rayon::prelude::*;
-use std::process::exit;
 
 fn main() {
     for source_size in 7..24 {
@@ -19,7 +18,7 @@ fn main() {
             .filter(|&x| !x)
             .count();
         if num_counterexamples > 0 {
-            exit(0);
+            return;
         }
     }
 }

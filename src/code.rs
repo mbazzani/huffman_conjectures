@@ -68,50 +68,51 @@ pub trait FromNode {
     fn from_node(node: &Node<Probability>) -> Self;
 }
 
-fn from_node_helper(node: &Node<Probability>, depth: Depth) -> Vec<(CodeWord<Probability>, Depth)> {
-    let mut code: Vec<(CodeWord<Probability>, Depth)> = vec![];
-    match node.node_type() {
-        NodeType::Leaf(symbol) => {
-            code.push((CodeWord::new(*symbol, node.probability()), depth));
-        }
-        NodeType::Branch(children) => {
-            code.append(&mut from_node_helper(&children[0], depth + 1));
-            code.append(&mut from_node_helper(&children[1], depth + 1));
-        }
-    };
-    code
-}
-
+//TODO: Rewrite to be tail recursive 
+//and use iterators to avoid needless allocations
 impl FromNode for Code<Probability> {
     fn from_node(node: &Node<Probability>) -> Code<Probability> {
-        from_node_helper(node, 0).into_iter().collect()
+		fn helper(node: &Node<Probability>, depth: Depth) -> Vec<(CodeWord<Probability>, Depth)> {
+		    let mut code: Vec<(CodeWord<Probability>, Depth)> = vec![];
+		    match node.node_type() {
+		        NodeType::Leaf(symbol) => {
+		            code.push((CodeWord::new(*symbol, node.probability()), depth));
+		        }
+		        NodeType::Branch(children) => {
+		            code.append(&mut helper(&children[0], depth + 1));
+		            code.append(&mut helper(&children[1], depth + 1));
+		        }
+		    };
+		    code
+		}
+        helper(node, 0).into_iter().collect()
     }
 }
 
 pub trait MaxDepth {
-    fn max_depth(&self) -> &Depth;
+    fn max_depth(&self) -> Depth;
 }
 
 impl MaxDepth for Code<Probability> {
-    fn max_depth(&self) -> &Depth {
-        self.iter().max_by_key(|(_, &v)| v).unwrap().1
+    fn max_depth(&self) -> Depth {
+        *self.iter().max_by_key(|(_, &v)| v).unwrap().1
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::source::Source;
 
     #[test]
     fn from_node_test() {
-        let huff = Node::new_huffman(&Source::from_vec(vec![
-            ('a', 1),
-            ('b', 2),
-            ('c', 3),
-            ('d', 4),
-            ('e', 5),
-        ]))
+        let huff = Node::new_huffman(vec![
+            Node::new_leaf(1, 'a'),
+            Node::new_leaf(2, 'b'),
+            Node::new_leaf(3, 'c'),
+            Node::new_leaf(4, 'd'),
+            Node::new_leaf(5, 'e'),
+        ])
+
         .unwrap();
         let mut huff_code = Code::new();
         huff_code.insert(CodeWord::new('a', 1), 3);
@@ -130,7 +131,7 @@ mod tests {
         huff_code.insert(CodeWord::new('c', 1), 2);
         huff_code.insert(CodeWord::new('d', 1), 8);
         huff_code.insert(CodeWord::new('e', 1), 7);
-        assert_eq!(*huff_code.max_depth(), 8);
+        assert_eq!(huff_code.max_depth(), 8);
     }
 
     #[test]

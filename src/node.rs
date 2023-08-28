@@ -73,15 +73,18 @@ where
     pub fn node_type(&self) -> &NodeType<T> {
         &self.node_type
     }
+
+    //Used for testing only, very slow
     #[allow(dead_code)]
-    pub fn same_as(&self, other: &Node<T>) -> bool {
+    pub fn is_same_as(&self, other: &Node<T>) -> bool {
         if self.probability != other.probability {
             return false;
         }
         match (&self.node_type, &other.node_type) {
             (NodeType::Leaf(symbol), NodeType::Leaf(other_symbol)) => symbol == other_symbol,
             (NodeType::Branch(children), NodeType::Branch(other_children)) => {
-                children[0].same_as(&other_children[0]) && children[1].same_as(&other_children[1])
+                (children[0].is_same_as(&other_children[0]) && children[1].is_same_as(&other_children[1]))
+                || (children[0].is_same_as(&other_children[1]) && children[1].is_same_as(&other_children[0]))
             }
             (_, _) => false,
         }
@@ -90,8 +93,7 @@ where
 
 impl Node<u32> {
     #[allow(dead_code)]
-    pub fn new_huffman(source: &Source<u32>) -> Option<Node<u32>> {
-        let mut nodes = source.to_leaves_vec();
+    pub fn new_huffman(mut nodes: Vec<Node<u32>>) -> Option<Node<u32>> {
         loop {
             match nodes.len() {
                 0 => return None,
