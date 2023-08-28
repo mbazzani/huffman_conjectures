@@ -19,7 +19,7 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Check formatting
-      run: rustfmt --check src/*.rs
+      run: cargo format --check
     - name: Check style
       run: cargo clippy
     - name: Run tests
