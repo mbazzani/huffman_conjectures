@@ -143,3 +143,59 @@ pub fn no_huffman_code_competitively_dominates_skinniest(
     }
     true
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::node::Node;
+
+    #[test]
+    fn all_possible_reductions_test() {
+        let leaves = vec![
+            Node::new_leaf(1, 'a'),
+            Node::new_leaf(1, 'b'),
+            Node::new_leaf(2, 'c'),
+            Node::new_leaf(2, 'd'),
+        ];
+        let huff_a = 
+        Node::new_branch(
+            leaves[3].clone(),
+	        Node::new_branch(
+	            leaves[2].clone(),
+	            Node::new_branch(
+	                leaves[0].clone(), 
+	                leaves[1].clone()
+	                ),
+                )
+            );
+        let huff_b = 
+        Node::new_branch(
+            leaves[2].clone(),
+	        Node::new_branch(
+	            leaves[3].clone(),
+	            Node::new_branch(
+	                leaves[0].clone(), 
+	                leaves[1].clone()
+	                ),
+                )
+            );
+
+        let huff_c = 
+            Node::new_branch(
+	            Node::new_branch(
+	                leaves[3].clone(),
+                    leaves[2].clone(),
+                    ),
+	            Node::new_branch(
+	                leaves[0].clone(), 
+	                leaves[1].clone()
+	                ),
+                );
+
+        let reductions = all_possible_reductions(leaves);
+        println!("Reductions: {:#?}", reductions);
+        assert!(reductions.iter().any(|node| node.is_same_as(&huff_a)));
+        assert!(reductions.iter().any(|node| node.is_same_as(&huff_b)));
+        assert!(reductions.iter().any(|node| node.is_same_as(&huff_c)));
+    }
+}

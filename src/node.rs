@@ -106,3 +106,123 @@ impl Node<u32> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_huffman_test() {
+        let leaves = vec![
+            Node::new_leaf(1, 'a'),
+            Node::new_leaf(2, 'b'),
+            Node::new_leaf(3, 'c'),
+            Node::new_leaf(4, 'd'),
+        ];
+
+        let huff = 
+            Node::new_branch(
+                leaves[3].clone(),
+            Node::new_branch(
+                leaves[2].clone(),
+            Node::new_branch(
+                leaves[0].clone(),
+                leaves[1].clone(),
+            )
+            )
+            );
+        assert!(huff.is_same_as(&Node::new_huffman(leaves).unwrap()));
+    }
+
+    fn is_same_as_test() {
+        let leaves = vec![
+            Node::new_leaf(1, 'a'),
+            Node::new_leaf(1, 'b'),
+            Node::new_leaf(2, 'c'),
+            Node::new_leaf(2, 'd'),
+        ];
+
+        let code_a = 
+        Node::new_branch(
+            leaves[3].clone(),
+	        Node::new_branch(
+	            leaves[2].clone(),
+	            Node::new_branch(
+	                leaves[0].clone(), 
+	                leaves[1].clone()
+	                ),
+                )
+            );
+
+        let code_a_ = 
+        Node::new_branch(
+	        Node::new_branch(
+	            leaves[2].clone(),
+	            Node::new_branch(
+	                leaves[0].clone(), 
+	                leaves[1].clone()
+	                ),
+                ),
+            leaves[3].clone(),
+            );
+
+        let code_b = 
+        Node::new_branch(
+            leaves[2].clone(),
+	        Node::new_branch(
+	            leaves[3].clone(),
+	            Node::new_branch(
+	                leaves[0].clone(), 
+	                leaves[1].clone()
+	                ),
+                )
+            );
+
+        let code_b_ = 
+        Node::new_branch(
+            leaves[2].clone(),
+	        Node::new_branch(
+	            Node::new_branch(
+	                leaves[1].clone(),
+	                leaves[0].clone(), 
+	                ),
+	            leaves[3].clone(),
+                )
+            );
+
+        let code_c = 
+            Node::new_branch(
+	            Node::new_branch(
+	                leaves[3].clone(),
+                    leaves[2].clone(),
+                    ),
+	            Node::new_branch(
+	                leaves[0].clone(), 
+	                leaves[1].clone()
+	                ),
+                );
+
+        let code_c_ = 
+            Node::new_branch(
+	            Node::new_branch(
+	                leaves[0].clone(), 
+	                leaves[1].clone()
+	                ),
+	            Node::new_branch(
+	                leaves[2].clone(),
+                    leaves[3].clone(),
+                    ),
+                );
+        assert!(!code_a.is_same_as(&code_b));
+        assert!(!code_b.is_same_as(&code_c));
+        assert!(!code_c.is_same_as(&code_a));
+
+        assert!(code_a.is_same_as(&code_a));
+        assert!(code_b.is_same_as(&code_b));
+        assert!(code_c.is_same_as(&code_c));
+
+        assert!(code_a.is_same_as(&code_a_));
+        assert!(code_b.is_same_as(&code_b_));
+        assert!(code_c.is_same_as(&code_c_));
+    }
+}
