@@ -1,5 +1,3 @@
-use crate::source::Source;
-
 use std::cmp::Ordering;
 use std::ops::Add;
 use std::sync::Arc;
@@ -134,6 +132,7 @@ mod tests {
         assert!(huff.is_same_as(&Node::new_huffman(leaves).unwrap()));
     }
 
+    #[test]
     fn is_same_as_test() {
         let leaves = vec![
             Node::new_leaf(1, 'a'),
