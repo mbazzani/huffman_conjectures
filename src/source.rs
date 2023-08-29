@@ -20,8 +20,7 @@ impl Source<u32> {
         let mut probabilities: Vec<u32> = vec![0];
         let mut rng = thread_rng();
         while probabilities.contains(&0) {
-            let max_probability: u32 =
-                u32::try_from(len).unwrap() * PROBABILITY_GRANULARITY;
+            let max_probability: u32 = u32::try_from(len).unwrap() * PROBABILITY_GRANULARITY;
             let mut rand_values: Vec<u32> = (0..len + 1)
                 .map(|_| rng.gen_range(1..=max_probability))
                 .collect_vec();
