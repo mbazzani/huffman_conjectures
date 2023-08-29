@@ -50,74 +50,25 @@ where
         .collect()
 }
 
-//TODO: rewrite to use iterators
-
-//fn possible_reductions<T>(mut nodes: Vec<Node<T>>) -> Vec<Vec<Node<T>>>
-//where
-//    T: Add<Output = T> + Copy + Ord,
-//{
-//    match nodes.len() {
-//        0 | 1 => return vec![nodes],
-//        _ => (),
-//    }
-//
-//    nodes.sort();
-//    let num_smallest_nodes = nodes.iter().take_while(|&node| *node == nodes[0]).count();
-//    let num_second_smallest_nodes = nodes[num_smallest_nodes..]
-//        .iter()
-//        .take_while(|&node| *node == nodes[num_smallest_nodes])
-//        .count();
-//
-//    let possible_pair_indices: Box<dyn Iterator<Item = (usize, usize)>> =
-//        match (num_smallest_nodes, num_second_smallest_nodes) {
-//            (0, _) => panic!("Impossible because of the length assertion"),
-//            (1, 0) => panic!("Impossible because of the length assertion"),
-//            (1, 1) => Box::new(once((0, 1))),
-//            (1, n) => Box::new(zip(repeat(0usize), 1..(n + 1))),
-//            (n, _) => Box::new((0..n).tuple_combinations::<(_, _)>()),
-//        };
-//
-//    possible_pair_indices
-//        .map(|pair| join_nodes_by_indices(pair, nodes.clone()))
-//        .collect()
-//}
-
+//Note that this breaks if there exists a zero probablity element
 fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>>
 where
     T: Add<Output = T> + Copy + Ord,
 {
     let mut partial_reductions = vec![nodes];
-    let mut completed_reductions: Vec<Node<T>> = vec![];
+    let mut completed_reductions: Vec<_> = vec![];
     while !partial_reductions.is_empty() {
-        match partial_reductions.last().unwrap().len() {
-            0 | 1 => {
-                let mut last = partial_reductions.pop().unwrap();
-                completed_reductions.append(&mut last);
-            }
-            _ => {
-                let last = partial_reductions.pop().unwrap();
-                partial_reductions.append(&mut possible_reductions(last));
-            }
-        };
+        (completed_reductions, partial_reductions) = partial_reductions
+            .into_iter()
+            .partition(|nodes| nodes.len() < 2);
+        partial_reductions = partial_reductions
+            .into_iter()
+            .map(|nodes_list| possible_reductions(nodes_list))
+            .flatten()
+            .collect_vec();
     }
-    completed_reductions
+    completed_reductions.into_iter().flatten().collect_vec()
 }
-
-
-//Note that this breaks if there exists a zero probablity element
-//fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>>
-//where
-//    T: Add<Output = T> + Copy + Ord,
-//{
-//    let mut reductions = vec![nodes];
-//    while reductions.iter().all(|vec| vec.len()==1) {
-//        reductions = reductions
-//            .into_iter()
-//            .map(|nodes_list| possible_reductions(nodes_list))
-//            .collect_vec();
-//    }
-//    reductions.into_iter().flatten().collect_vec()
-//}
 
 pub fn no_huffman_code_competitively_dominates_skinniest(
     source_size: usize,
