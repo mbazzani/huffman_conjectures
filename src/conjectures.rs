@@ -68,8 +68,7 @@ where
             .partition(|nodes| nodes.len() < 2);
         partial_reductions = partial_reductions
             .into_iter()
-            .map(|nodes_list| possible_reductions(nodes_list))
-            .flatten()
+            .flat_map(|nodes_list| possible_reductions(nodes_list))
             .collect_vec();
     }
     completed_reductions.into_iter().flatten().collect_vec()

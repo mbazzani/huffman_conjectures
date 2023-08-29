@@ -36,7 +36,7 @@ where
     T: Copy + Add<Output = T> + Eq + Ord,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.probability.partial_cmp(&other.probability)
+        Some(self.cmp(other))
     }
 }
 
