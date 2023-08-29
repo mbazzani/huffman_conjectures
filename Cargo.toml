@@ -15,12 +15,10 @@ incremental = true
 panic = 'unwind'
 
 [dependencies]
+serde = "1.0.188"
 num = "0.4"
 itertools = "0.11.0"
 rand = "0.8.5"
 rustc-hash = "1.1.0"
 rayon = "1.7.0"
-
-[dependencies.xxhash-rust]
-version = "0.8.5"
-features = ["xxh3", "const_xxh3"]
+xxhash-rust = { version = "0.8.5", features = ["xxh3", "const_xxh3"] }
