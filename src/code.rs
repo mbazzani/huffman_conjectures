@@ -72,11 +72,17 @@ pub trait FromNode {
 //and use iterators to avoid needless allocations
 impl FromNode for Code<Probability> {
     fn from_node(node: &Node<Probability>) -> Code<Probability> {
-        fn helper(node: &Node<Probability>, depth: Depth) -> Vec<(CodeWord<Probability>, Depth)> {
+        fn helper(
+            node: &Node<Probability>,
+            depth: Depth,
+        ) -> Vec<(CodeWord<Probability>, Depth)> {
             let mut code: Vec<(CodeWord<Probability>, Depth)> = vec![];
             match node.node_type() {
                 NodeType::Leaf(symbol) => {
-                    code.push((CodeWord::new(*symbol, node.probability()), depth));
+                    code.push((
+                        CodeWord::new(*symbol, node.probability()),
+                        depth,
+                    ));
                 }
                 NodeType::Branch(children) => {
                     code.append(&mut helper(&children[0], depth + 1));

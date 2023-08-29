@@ -79,7 +79,9 @@ where
             return false;
         }
         match (&self.node_type, &other.node_type) {
-            (NodeType::Leaf(symbol), NodeType::Leaf(other_symbol)) => symbol == other_symbol,
+            (NodeType::Leaf(symbol), NodeType::Leaf(other_symbol)) => {
+                symbol == other_symbol
+            }
             (NodeType::Branch(children), NodeType::Branch(other_children)) => {
                 (children[0].is_same_as(&other_children[0])
                     && children[1].is_same_as(&other_children[1]))

@@ -15,7 +15,10 @@ fn remove_two<T>(x: usize, y: usize, vec: &mut Vec<T>) -> (T, T) {
     (j, k)
 }
 
-fn join_nodes_by_indices<T>(pair_index: (usize, usize), mut nodes: Vec<Node<T>>) -> Vec<Node<T>>
+fn join_nodes_by_indices<T>(
+    pair_index: (usize, usize),
+    mut nodes: Vec<Node<T>>,
+) -> Vec<Node<T>>
 where
     T: Copy + Add<Output = T> + Ord,
 {
@@ -31,7 +34,8 @@ where
     //TODO: Add better error handling
     assert!(!nodes.is_empty());
     nodes.sort();
-    let num_smallest_nodes = nodes.iter().take_while(|&node| *node == nodes[0]).count();
+    let num_smallest_nodes =
+        nodes.iter().take_while(|&node| *node == nodes[0]).count();
     let num_second_smallest_nodes = nodes[num_smallest_nodes..]
         .iter()
         .take_while(|&node| *node == nodes[num_smallest_nodes])

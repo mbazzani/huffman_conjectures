@@ -7,9 +7,10 @@ use std::iter::zip;
 pub struct Source<T>(Vec<(char, T)>);
 
 const ASCII: [char; 52] = [
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
-    't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-    'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+    'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
+    'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+    'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 ];
 
 const PROBABILITY_GRANULARITY: u32 = 120;
@@ -20,7 +21,8 @@ impl Source<u32> {
         let mut probabilities: Vec<u32> = vec![0];
         let mut rng = thread_rng();
         while probabilities.contains(&0) {
-            let max_probability: u32 = u32::try_from(len).unwrap() * PROBABILITY_GRANULARITY;
+            let max_probability: u32 =
+                u32::try_from(len).unwrap() * PROBABILITY_GRANULARITY;
             let mut rand_values: Vec<u32> = (0..len + 1)
                 .map(|_| rng.gen_range(1..=max_probability))
                 .collect_vec();
@@ -37,7 +39,9 @@ impl Source<u32> {
     }
 
     pub fn new(size: usize) -> Source<u32> {
-        Source(zip(ASCII, Source::uniform_int_probabilities(size)).collect_vec())
+        Source(
+            zip(ASCII, Source::uniform_int_probabilities(size)).collect_vec(),
+        )
     }
     #[allow(dead_code)]
     pub fn from_vec(vec: Vec<(char, u32)>) -> Source<u32> {
@@ -82,7 +86,8 @@ mod test {
 
     #[test]
     fn to_leaves_vec_test() {
-        let source = Source(vec![('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]);
+        let source =
+            Source(vec![('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]);
         let mut leaves_vec = source.to_leaves_vec();
         let mut leaves_vec_test = vec![
             Node::new_leaf(1, 'a'),
