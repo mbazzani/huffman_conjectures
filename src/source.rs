@@ -6,24 +6,24 @@ use std::iter::zip;
 
 pub struct Source<T>(Vec<(char, T)>);
 
-static ASCII: [char; 52] = [
+const ASCII: [char; 52] = [
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
     't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
     'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 ];
 
-//TODO: Resize dynamically
-static PROBABILITY_GRANULARITY: u32 = 120;
+const PROBABILITY_GRANULARITY: u32 = 120;
 
 impl Source<u32> {
     //TODO: Find faster way of preventing zeros
     fn uniform_int_probabilities(len: usize) -> Vec<u32> {
         let mut probabilities: Vec<u32> = vec![0];
+        let mut rng = thread_rng();
         while probabilities.contains(&0) {
             let max_probability: u32 =
-                <usize as TryInto<u32>>::try_into(len).unwrap() * PROBABILITY_GRANULARITY;
+                u32::try_from(len).unwrap() * PROBABILITY_GRANULARITY;
             let mut rand_values: Vec<u32> = (0..len + 1)
-                .map(|_| thread_rng().gen_range(1..=max_probability))
+                .map(|_| rng.gen_range(1..=max_probability))
                 .collect_vec();
             rand_values.sort(); //smallest to biggest
             rand_values[0] = 0;

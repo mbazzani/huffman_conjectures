@@ -83,8 +83,10 @@ where
         match (&self.node_type, &other.node_type) {
             (NodeType::Leaf(symbol), NodeType::Leaf(other_symbol)) => symbol == other_symbol,
             (NodeType::Branch(children), NodeType::Branch(other_children)) => {
-                (children[0].is_same_as(&other_children[0]) && children[1].is_same_as(&other_children[1]))
-                || (children[0].is_same_as(&other_children[1]) && children[1].is_same_as(&other_children[0]))
+                (children[0].is_same_as(&other_children[0])
+                    && children[1].is_same_as(&other_children[1]))
+                    || (children[0].is_same_as(&other_children[1])
+                        && children[1].is_same_as(&other_children[0]))
             }
             (_, _) => false,
         }
@@ -122,17 +124,13 @@ mod tests {
             Node::new_leaf(4, 'd'),
         ];
 
-        let huff = 
-            Node::new_branch(
-                leaves[3].clone(),
+        let huff = Node::new_branch(
+            leaves[3].clone(),
             Node::new_branch(
                 leaves[2].clone(),
-            Node::new_branch(
-                leaves[0].clone(),
-                leaves[1].clone(),
-            )
-            )
-            );
+                Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+            ),
+        );
         assert!(huff.is_same_as(&Node::new_huffman(leaves).unwrap()));
     }
 
@@ -144,77 +142,47 @@ mod tests {
             Node::new_leaf(2, 'd'),
         ];
 
-        let code_a = 
-        Node::new_branch(
+        let code_a = Node::new_branch(
             leaves[3].clone(),
-	        Node::new_branch(
-	            leaves[2].clone(),
-	            Node::new_branch(
-	                leaves[0].clone(), 
-	                leaves[1].clone()
-	                ),
-                )
-            );
+            Node::new_branch(
+                leaves[2].clone(),
+                Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+            ),
+        );
 
-        let code_a_ = 
-        Node::new_branch(
-	        Node::new_branch(
-	            leaves[2].clone(),
-	            Node::new_branch(
-	                leaves[0].clone(), 
-	                leaves[1].clone()
-	                ),
-                ),
+        let code_a_ = Node::new_branch(
+            Node::new_branch(
+                leaves[2].clone(),
+                Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+            ),
             leaves[3].clone(),
-            );
+        );
 
-        let code_b = 
-        Node::new_branch(
+        let code_b = Node::new_branch(
             leaves[2].clone(),
-	        Node::new_branch(
-	            leaves[3].clone(),
-	            Node::new_branch(
-	                leaves[0].clone(), 
-	                leaves[1].clone()
-	                ),
-                )
-            );
+            Node::new_branch(
+                leaves[3].clone(),
+                Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+            ),
+        );
 
-        let code_b_ = 
-        Node::new_branch(
+        let code_b_ = Node::new_branch(
             leaves[2].clone(),
-	        Node::new_branch(
-	            Node::new_branch(
-	                leaves[1].clone(),
-	                leaves[0].clone(), 
-	                ),
-	            leaves[3].clone(),
-                )
-            );
-
-        let code_c = 
             Node::new_branch(
-	            Node::new_branch(
-	                leaves[3].clone(),
-                    leaves[2].clone(),
-                    ),
-	            Node::new_branch(
-	                leaves[0].clone(), 
-	                leaves[1].clone()
-	                ),
-                );
+                Node::new_branch(leaves[1].clone(), leaves[0].clone()),
+                leaves[3].clone(),
+            ),
+        );
 
-        let code_c_ = 
-            Node::new_branch(
-	            Node::new_branch(
-	                leaves[0].clone(), 
-	                leaves[1].clone()
-	                ),
-	            Node::new_branch(
-	                leaves[2].clone(),
-                    leaves[3].clone(),
-                    ),
-                );
+        let code_c = Node::new_branch(
+            Node::new_branch(leaves[3].clone(), leaves[2].clone()),
+            Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+        );
+
+        let code_c_ = Node::new_branch(
+            Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+            Node::new_branch(leaves[2].clone(), leaves[3].clone()),
+        );
         assert!(!code_a.is_same_as(&code_b));
         assert!(!code_b.is_same_as(&code_c));
         assert!(!code_c.is_same_as(&code_a));

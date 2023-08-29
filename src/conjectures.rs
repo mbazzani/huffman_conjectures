@@ -28,6 +28,7 @@ fn possible_reductions<T>(mut nodes: Vec<Node<T>>) -> Vec<Vec<Node<T>>>
 where
     T: Add<Output = T> + Copy + Ord,
 {
+    //TODO: Add better error handling
     assert!(!nodes.is_empty());
     nodes.sort();
     let num_smallest_nodes = nodes.iter().take_while(|&node| *node == nodes[0]).count();
@@ -85,7 +86,7 @@ pub fn no_huffman_code_competitively_dominates_skinniest(
             0 => panic!("There should always exist a huffman code"),
             1 => continue,
             _ => (),
-        } //TODO: Check for actual ambiguitites?
+        }
         let one_huffman_dominates_other = huffman_codes
             .iter()
             .tuple_combinations::<(_, _)>()
@@ -130,43 +131,28 @@ mod tests {
             Node::new_leaf(2, 'c'),
             Node::new_leaf(2, 'd'),
         ];
-        let huff_a = 
-        Node::new_branch(
+        let huff_a = Node::new_branch(
             leaves[3].clone(),
-	        Node::new_branch(
-	            leaves[2].clone(),
-	            Node::new_branch(
-	                leaves[0].clone(), 
-	                leaves[1].clone()
-	                ),
-                )
-            );
-        let huff_b = 
-        Node::new_branch(
-            leaves[2].clone(),
-	        Node::new_branch(
-	            leaves[3].clone(),
-	            Node::new_branch(
-	                leaves[0].clone(), 
-	                leaves[1].clone()
-	                ),
-                )
-            );
-
-        let huff_c = 
             Node::new_branch(
-	            Node::new_branch(
-	                leaves[3].clone(),
-                    leaves[2].clone(),
-                    ),
-	            Node::new_branch(
-	                leaves[0].clone(), 
-	                leaves[1].clone()
-	                ),
-                );
+                leaves[2].clone(),
+                Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+            ),
+        );
+        let huff_b = Node::new_branch(
+            leaves[2].clone(),
+            Node::new_branch(
+                leaves[3].clone(),
+                Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+            ),
+        );
+
+        let huff_c = Node::new_branch(
+            Node::new_branch(leaves[3].clone(), leaves[2].clone()),
+            Node::new_branch(leaves[0].clone(), leaves[1].clone()),
+        );
 
         let reductions = all_possible_reductions(leaves);
-        println!("Reductions: {:#?}", reductions);
+        assert!(reductions.len() >= 1 && reductions.len() <= 4 * 3 * 2);
         assert!(reductions.iter().any(|node| node.is_same_as(&huff_a)));
         assert!(reductions.iter().any(|node| node.is_same_as(&huff_b)));
         assert!(reductions.iter().any(|node| node.is_same_as(&huff_c)));

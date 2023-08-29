@@ -68,23 +68,23 @@ pub trait FromNode {
     fn from_node(node: &Node<Probability>) -> Self;
 }
 
-//TODO: Rewrite to be tail recursive 
+//TODO: Rewrite to be tail recursive
 //and use iterators to avoid needless allocations
 impl FromNode for Code<Probability> {
     fn from_node(node: &Node<Probability>) -> Code<Probability> {
-		fn helper(node: &Node<Probability>, depth: Depth) -> Vec<(CodeWord<Probability>, Depth)> {
-		    let mut code: Vec<(CodeWord<Probability>, Depth)> = vec![];
-		    match node.node_type() {
-		        NodeType::Leaf(symbol) => {
-		            code.push((CodeWord::new(*symbol, node.probability()), depth));
-		        }
-		        NodeType::Branch(children) => {
-		            code.append(&mut helper(&children[0], depth + 1));
-		            code.append(&mut helper(&children[1], depth + 1));
-		        }
-		    };
-		    code
-		}
+        fn helper(node: &Node<Probability>, depth: Depth) -> Vec<(CodeWord<Probability>, Depth)> {
+            let mut code: Vec<(CodeWord<Probability>, Depth)> = vec![];
+            match node.node_type() {
+                NodeType::Leaf(symbol) => {
+                    code.push((CodeWord::new(*symbol, node.probability()), depth));
+                }
+                NodeType::Branch(children) => {
+                    code.append(&mut helper(&children[0], depth + 1));
+                    code.append(&mut helper(&children[1], depth + 1));
+                }
+            };
+            code
+        }
         helper(node, 0).into_iter().collect()
     }
 }
@@ -112,7 +112,6 @@ mod tests {
             Node::new_leaf(4, 'd'),
             Node::new_leaf(5, 'e'),
         ])
-
         .unwrap();
         let mut huff_code = Code::new();
         huff_code.insert(CodeWord::new('a', 1), 3);
