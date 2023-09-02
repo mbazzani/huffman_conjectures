@@ -116,6 +116,42 @@ pub fn no_huffman_code_competitively_dominates_skinniest(
     }
     true
 }
+pub fn no_huffman_dominates_another_and_is_optimal(
+    source_size: usize,
+    num_sources: u32,
+) -> bool {
+    let mut sources_tested = 0;
+    while sources_tested < num_sources {
+        let leaves = Source::new(source_size).to_leaves_vec();
+        let possible_reductions = all_possible_reductions(leaves);
+        let huffman_codes = possible_reductions
+            .iter()
+            .map(|node| (node, Code::from_node(node)))
+            .collect_vec();
+        match huffman_codes.len() {
+            0 => panic!("There should always exist a huffman code"),
+            1 => continue,
+            _ => (),
+        }
+        let some_huffman_beat_others = huffman_codes
+            .iter()
+            .tuple_combinations::<(_, _)>()
+            .any(|((_, code_a), (_, code_b))| !code_a.ties(&code_b).unwrap());
+        if some_huffman_beat_others { sources_tested+= 1 } else { continue }
+        let unbeaten_huffman_codes = 
+            huffman_codes
+            .iter()
+            .filter(|(_, code)| !huffman_codes.iter()
+                    .any(|(_, other_code)| other_code.beats(code).unwrap()));
+        let possibly_optimal_codes = unbeaten_huffman_codes
+            .filter(|(tree, _)| tree.is_probably_competitively_optimal());
+        if possibly_optimal_codes.peekable().peek().is_some() {
+            println!("Found possible example");
+            return false
+        }
+    }
+    true
+}
 
 #[cfg(test)]
 mod tests {

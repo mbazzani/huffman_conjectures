@@ -99,6 +99,32 @@ where
             (_, _) => false,
         }
     }
+
+    //Checks whether any node is
+    pub fn is_probably_competitively_optimal(&self) -> bool 
+        where T: RealNum {
+        fn helper<T>(node: &Node<T>, mut differences_between_higher_nodes: Vec<T>)  -> bool
+        where T: RealNum { 
+            if differences_between_higher_nodes.iter().any(|p| p < &node.probability) { 
+                false
+            } else {
+                match node.node_type.clone() {
+                    NodeType::Leaf(_) => true,
+                    NodeType::Branch(children) => {
+                        let (l, r) = (&(*children)[0], &(*children)[1]);
+                        //Yes, I should be doing `abs` here, but that causes 
+                        //huge headaches with trait bounds
+                        let bigger_p = max(l.probability, r.probability);
+                        let smaller_p = min(l.probability, r.probability); 
+                        differences_between_higher_nodes.push(bigger_p - smaller_p);
+                        helper(&l, differences_between_higher_nodes.clone()) &&
+                            helper(&r, differences_between_higher_nodes)
+                    },
+                }
+            }
+        }
+        helper(self, vec![])
+    }
 }
 
 impl Node<u32> {
