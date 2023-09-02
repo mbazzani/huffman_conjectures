@@ -1,5 +1,5 @@
 use crate::code::{Code, CompetitiveOrd, FromNode, MaxDepth};
-use crate::node::Node;
+use crate::node::{Node, RealNum};
 use crate::source::Source;
 
 use itertools::Itertools;
@@ -20,7 +20,7 @@ fn join_nodes_by_indices<T>(
     mut nodes: Vec<Node<T>>,
 ) -> Vec<Node<T>>
 where
-    T: Copy + Add<Output = T> + Ord,
+    T: RealNum
 {
     let (left, right) = remove_two(pair_index.0, pair_index.1, &mut nodes);
     nodes.push(Node::new_branch(left, right));
@@ -29,7 +29,7 @@ where
 
 fn possible_reductions<T>(mut nodes: Vec<Node<T>>) -> Vec<Vec<Node<T>>>
 where
-    T: Add<Output = T> + Copy + Ord,
+    T: RealNum
 {
     //TODO: Add better error handling
     assert!(!nodes.is_empty());
@@ -56,10 +56,7 @@ where
 }
 
 //Note that this breaks if there exists a zero probablity element
-fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>>
-where
-    T: Add<Output = T> + Copy + Ord,
-{
+fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>> where T: RealNum {
     let mut partial_reductions = vec![nodes];
     let mut completed_reductions: Vec<_> = vec![];
     while !partial_reductions.is_empty() {
@@ -93,8 +90,7 @@ pub fn no_huffman_code_competitively_dominates_skinniest(
         let one_huffman_dominates_other = huffman_codes
             .iter()
             .tuple_combinations::<(_, _)>()
-            .map(|(a, b)| a.beats(b))
-            .any(|b| b.unwrap());
+            .any(|(a, b)| !a.ties(b).unwrap());
         if one_huffman_dominates_other {
             //println!("Found pmf where one huffman code dominates another");
             sources_tested += 1;

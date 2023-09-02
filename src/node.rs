@@ -1,11 +1,20 @@
 use std::cmp::Ordering;
-use std::ops::Add;
+use std::cmp::{max, min};
+use std::ops::*;
+use std::convert::TryFrom;
+use num::traits::*;
 use std::sync::Arc;
+
+pub trait RealNum: 
+    Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self>  + Copy + Ord + From<u8>
+    where Self: std::marker::Sized {}
+impl<T> RealNum for T 
+    where T: Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Copy + Ord + From<u8> {}
 
 #[derive(Debug, Clone)]
 pub enum NodeType<T>
 where
-    T: Copy + Add<Output = T> + Eq + Ord,
+    T: RealNum 
 {
     Leaf(char),
     Branch(Arc<[Node<T>; 2]>),
@@ -14,26 +23,25 @@ where
 #[derive(Debug, Clone)]
 pub struct Node<T>
 where
-    T: Copy + Add<Output = T> + Eq + Ord,
+    T: RealNum
 {
     probability: T,
     node_type: NodeType<T>,
 }
 
-impl<T> PartialEq for Node<T>
-where
-    T: Copy + Add<Output = T> + Eq + Ord,
+impl<T> PartialEq for Node<T> where
+    T: RealNum
 {
     fn eq(&self, other: &Self) -> bool {
         self.probability == other.probability
     }
 }
 
-impl<T> Eq for Node<T> where T: Eq + Copy + Add<Output = T> + Ord {}
+impl<T> Eq for Node<T> where T: RealNum {}
 
 impl<T> PartialOrd for Node<T>
 where
-    T: Copy + Add<Output = T> + Eq + Ord,
+    T: RealNum
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -42,7 +50,7 @@ where
 
 impl<T> Ord for Node<T>
 where
-    T: Copy + Add<Output = T> + Eq + Ord,
+    T: RealNum
 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.probability.cmp(&other.probability)
@@ -51,9 +59,9 @@ where
 
 impl<T> Node<T>
 where
-    T: Copy + Add<Output = T> + Eq + Ord,
+    T: RealNum
 {
-    pub fn new_leaf(probability: T, symbol: char) -> Node<T> {
+    pub fn new_leaf(probability: T, symbol: char) -> Node<T> where T: RealNum {
         Node {
             probability,
             node_type: NodeType::Leaf(symbol),
