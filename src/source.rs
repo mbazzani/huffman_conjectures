@@ -16,9 +16,9 @@ const ASCII: [char; 52] = [
 //const PROBABILITY_GRANULARITY: u32 = ;
 
 impl Source<u32> {
-    //TODO: Find faster way of preventing zeros
+    #[allow(dead_code)]
     fn uniform_int_probabilities(len: usize) -> Vec<u32> {
-        let mut probabilities: Vec<u32> = vec![0];
+        let mut probabilities = vec![0];
         let mut rng = thread_rng();
         while probabilities.contains(&0) {
             let max_probability: u32 = u32::try_from(len * len).unwrap();
@@ -37,10 +37,23 @@ impl Source<u32> {
         probabilities
     }
 
-    pub fn new(size: usize) -> Source<u32> {
+    fn int_probabilities(len: usize) -> Vec<u32> {
+        let mut rng = thread_rng();
+        let max_probability: u32 = u32::try_from(len * len).unwrap();
+        (0..len)
+            .map(|_| rng.gen_range(1..max_probability))
+            .collect_vec()
+    }
+
+    #[allow(dead_code)]
+    pub fn new_int_uniform(size: usize) -> Source<u32> {
         Source(
             zip(ASCII, Source::uniform_int_probabilities(size)).collect_vec(),
         )
+    }
+
+    pub fn new(size: usize) -> Source<u32> {
+        Source(zip(ASCII, Source::int_probabilities(size)).collect_vec())
     }
     #[allow(dead_code)]
     pub fn from_vec(vec: Vec<(char, u32)>) -> Source<u32> {
@@ -72,14 +85,23 @@ mod test {
     }
 
     #[test]
+    fn new_int_uniform_test() {
+        let size_usize: usize = 23;
+        let size_u32: u32 = 23;
+        let source = Source::new_int_uniform(size_usize);
+        assert!(
+            source.0.iter().map(|(_, i)| i).fold(0, |acc, x| acc + x)
+                == size_u32 * size_u32
+        );
+        assert!(!source.0.iter().map(|(_, i)| i).contains(&0));
+    }
+
+    #[test]
     fn new_test() {
         let size_usize: usize = 23;
         let size_u32: u32 = 23;
         let source = Source::new(size_usize);
-        assert!(
-            source.0.iter().map(|(_, i)| i).fold(0, |acc, x| acc + x)
-                == PROBABILITY_GRANULARITY * size_u32
-        );
+        assert!(!source.0.iter().any(|(_, i)| *i > size_u32 * size_u32));
         assert!(!source.0.iter().map(|(_, i)| i).contains(&0));
     }
 

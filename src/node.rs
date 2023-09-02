@@ -1,20 +1,22 @@
 use std::cmp::Ordering;
-use std::cmp::{max, min};
 use std::ops::*;
-use std::convert::TryFrom;
-use num::traits::*;
 use std::sync::Arc;
 
-pub trait RealNum: 
-    Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self>  + Copy + Ord + From<u8>
-    where Self: std::marker::Sized {}
-impl<T> RealNum for T 
-    where T: Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Copy + Ord + From<u8> {}
+pub trait RealNum:
+    Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Copy + Ord
+where
+    Self: std::marker::Sized,
+{
+}
+impl<T> RealNum for T where
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Ord
+{
+}
 
 #[derive(Debug, Clone)]
 pub enum NodeType<T>
 where
-    T: RealNum 
+    T: RealNum,
 {
     Leaf(char),
     Branch(Arc<[Node<T>; 2]>),
@@ -23,14 +25,15 @@ where
 #[derive(Debug, Clone)]
 pub struct Node<T>
 where
-    T: RealNum
+    T: RealNum,
 {
     probability: T,
     node_type: NodeType<T>,
 }
 
-impl<T> PartialEq for Node<T> where
-    T: RealNum
+impl<T> PartialEq for Node<T>
+where
+    T: RealNum,
 {
     fn eq(&self, other: &Self) -> bool {
         self.probability == other.probability
@@ -41,7 +44,7 @@ impl<T> Eq for Node<T> where T: RealNum {}
 
 impl<T> PartialOrd for Node<T>
 where
-    T: RealNum
+    T: RealNum,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -50,7 +53,7 @@ where
 
 impl<T> Ord for Node<T>
 where
-    T: RealNum
+    T: RealNum,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.probability.cmp(&other.probability)
@@ -59,9 +62,12 @@ where
 
 impl<T> Node<T>
 where
-    T: RealNum
+    T: RealNum,
 {
-    pub fn new_leaf(probability: T, symbol: char) -> Node<T> where T: RealNum {
+    pub fn new_leaf(probability: T, symbol: char) -> Node<T>
+    where
+        T: RealNum,
+    {
         Node {
             probability,
             node_type: NodeType::Leaf(symbol),
@@ -99,35 +105,49 @@ where
             (_, _) => false,
         }
     }
-
-    //Checks whether any node is
-    pub fn is_probably_competitively_optimal(&self) -> bool 
-        where T: RealNum {
-        fn helper<T>(node: &Node<T>, mut differences_between_higher_nodes: Vec<T>)  -> bool
-        where T: RealNum { 
-            if differences_between_higher_nodes.iter().any(|p| p < &node.probability) { 
-                false
-            } else {
-                match node.node_type.clone() {
-                    NodeType::Leaf(_) => true,
-                    NodeType::Branch(children) => {
-                        let (l, r) = (&(*children)[0], &(*children)[1]);
-                        //Yes, I should be doing `abs` here, but that causes 
-                        //huge headaches with trait bounds
-                        let bigger_p = max(l.probability, r.probability);
-                        let smaller_p = min(l.probability, r.probability); 
-                        differences_between_higher_nodes.push(bigger_p - smaller_p);
-                        helper(&l, differences_between_higher_nodes.clone()) &&
-                            helper(&r, differences_between_higher_nodes)
-                    },
-                }
-            }
-        }
-        helper(self, vec![])
-    }
 }
 
 impl Node<u32> {
+    //Checks whether any node is
+    pub fn is_probably_competitively_optimal(&self) -> bool {
+        fn helper(
+            node: &Node<u32>,
+            mut higher_node_differences: Vec<u32>,
+            prev_sibling_difference: u32,
+        ) -> bool {
+            match node.node_type.clone() {
+                NodeType::Leaf(_) => higher_node_differences
+                    .into_iter()
+                    .all(|p| p <= node.probability),
+                NodeType::Branch(children) => {
+                    //let (l, r) = (children[0].clone(), children[1].clone());
+                    let (l, r) = (&children[0], &children[1]);
+                    let (bigger, smaller) =
+                        if *l > *r { (l, r) } else { (r, l) };
+                    let sibling_difference =
+                        bigger.probability - smaller.probability;
+                    let one_child_optimal = helper(
+                        smaller,
+                        higher_node_differences.clone(),
+                        sibling_difference,
+                    );
+                    dbg!(higher_node_differences.clone());
+                    higher_node_differences.push(prev_sibling_difference);
+                    dbg!(higher_node_differences.clone());
+                    let other_child_optimal = helper(
+                        bigger,
+                        higher_node_differences,
+                        sibling_difference,
+                    );
+                    dbg!(one_child_optimal);
+                    dbg!(other_child_optimal);
+                    one_child_optimal && other_child_optimal
+                }
+            }
+        }
+        helper(self, vec![], u32::MIN)
+    }
+
     #[allow(dead_code)]
     pub fn new_huffman(mut nodes: Vec<Node<u32>>) -> Option<Node<u32>> {
         loop {
@@ -229,5 +249,81 @@ mod tests {
         assert!(code_a.is_same_as(&code_a_));
         assert!(code_b.is_same_as(&code_b_));
         assert!(code_c.is_same_as(&code_c_));
+    }
+
+    #[test]
+    fn is_probably_competitively_optimal_test() {
+        let code_a = Node::new_branch(
+            Node::new_leaf(4, 'a'),
+            Node::new_branch(
+                Node::new_leaf(3, 'b'),
+                Node::new_branch(
+                    Node::new_leaf(2, 'c'),
+                    Node::new_leaf(1, 'd'),
+                ),
+            ),
+        );
+
+        let code_b = Node::new_branch(
+            Node::new_leaf(4, 'a'),
+            Node::new_branch(Node::new_leaf(3, 'b'), Node::new_leaf(2, 'c')),
+        );
+
+        let code_c = Node::new_branch(
+            Node::new_branch(
+                Node::new_branch(
+                    Node::new_leaf(512, 'a'),
+                    Node::new_leaf(512, 'b'),
+                ),
+                Node::new_branch(
+                    Node::new_leaf(512, 'c'),
+                    Node::new_leaf(512, 'd'),
+                ),
+            ),
+            Node::new_branch(
+                Node::new_branch(
+                    Node::new_leaf(512, 'e'),
+                    Node::new_leaf(512, 'f'),
+                ),
+                Node::new_branch(
+                    Node::new_branch(
+                        Node::new_leaf(256, 'g'),
+                        Node::new_leaf(256, 'h'),
+                    ),
+                    Node::new_branch(
+                        Node::new_leaf(256, 'i'),
+                        Node::new_branch(
+                            Node::new_leaf(128, 'j'),
+                            Node::new_branch(
+                                Node::new_leaf(64, 'k'),
+                                Node::new_branch(
+                                    Node::new_leaf(32, 'l'),
+                                    Node::new_branch(
+                                        Node::new_leaf(16, 'm'),
+                                        Node::new_branch(
+                                            Node::new_leaf(8, 'n'),
+                                            Node::new_branch(
+                                                Node::new_leaf(4, 'o'),
+                                                Node::new_branch(
+                                                    Node::new_leaf(2, 'p'),
+                                                    Node::new_branch(
+                                                        Node::new_leaf(1, 'q'),
+                                                        Node::new_leaf(1, 'r'),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        );
+        assert!(!code_a.is_probably_competitively_optimal());
+        println!("Starting code b");
+        assert!(code_b.is_probably_competitively_optimal());
+        assert!(code_c.is_probably_competitively_optimal());
     }
 }

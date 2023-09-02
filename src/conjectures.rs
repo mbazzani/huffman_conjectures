@@ -4,15 +4,13 @@ use crate::source::Source;
 
 use itertools::Itertools;
 use std::iter::{once, repeat, zip};
-use std::ops::Add;
 
 fn remove_two<T>(x: usize, y: usize, vec: &mut Vec<T>) -> (T, T) {
     assert!(x != y);
     let (first, second) = if x < y { (x, y) } else { (y, x) };
 
     let j = vec.remove(first);
-    let k = vec.remove(second - 1);
-    (j, k)
+    let k = vec.remove(second - 1); (j, k)
 }
 
 fn join_nodes_by_indices<T>(
@@ -20,7 +18,7 @@ fn join_nodes_by_indices<T>(
     mut nodes: Vec<Node<T>>,
 ) -> Vec<Node<T>>
 where
-    T: RealNum
+    T: RealNum,
 {
     let (left, right) = remove_two(pair_index.0, pair_index.1, &mut nodes);
     nodes.push(Node::new_branch(left, right));
@@ -29,7 +27,7 @@ where
 
 fn possible_reductions<T>(mut nodes: Vec<Node<T>>) -> Vec<Vec<Node<T>>>
 where
-    T: RealNum
+    T: RealNum,
 {
     //TODO: Add better error handling
     assert!(!nodes.is_empty());
@@ -56,7 +54,10 @@ where
 }
 
 //Note that this breaks if there exists a zero probablity element
-fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>> where T: RealNum {
+fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>>
+where
+    T: RealNum,
+{
     let mut partial_reductions = vec![nodes];
     let mut completed_reductions: Vec<_> = vec![];
     while !partial_reductions.is_empty() {
@@ -71,6 +72,7 @@ fn all_possible_reductions<T>(nodes: Vec<Node<T>>) -> Vec<Node<T>> where T: Real
     completed_reductions.into_iter().flatten().collect_vec()
 }
 
+#[allow(dead_code)]
 pub fn no_huffman_code_competitively_dominates_skinniest(
     source_size: usize,
     sources_to_test: u32,
@@ -136,18 +138,23 @@ pub fn no_huffman_dominates_another_and_is_optimal(
         let some_huffman_beat_others = huffman_codes
             .iter()
             .tuple_combinations::<(_, _)>()
-            .any(|((_, code_a), (_, code_b))| !code_a.ties(&code_b).unwrap());
-        if some_huffman_beat_others { sources_tested+= 1 } else { continue }
-        let unbeaten_huffman_codes = 
-            huffman_codes
-            .iter()
-            .filter(|(_, code)| !huffman_codes.iter()
-                    .any(|(_, other_code)| other_code.beats(code).unwrap()));
+            .any(|((_, code_a), (_, code_b))| !code_a.ties(code_b).unwrap());
+        if some_huffman_beat_others {
+            sources_tested += 1
+        } else {
+            continue;
+        }
+        let unbeaten_huffman_codes =
+            huffman_codes.iter().filter(|(_, code)| {
+                !huffman_codes
+                    .iter()
+                    .any(|(_, other_code)| other_code.beats(code).unwrap())
+            });
         let possibly_optimal_codes = unbeaten_huffman_codes
             .filter(|(tree, _)| tree.is_probably_competitively_optimal());
         if possibly_optimal_codes.peekable().peek().is_some() {
             println!("Found possible example");
-            return false
+            return false;
         }
     }
     true
