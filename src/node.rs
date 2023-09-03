@@ -1,15 +1,16 @@
 use std::cmp::Ordering;
+use std::hash::Hash;
 use std::ops::*;
 use std::sync::Arc;
 
 pub trait RealNum:
-    Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Copy + Ord
+    Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Copy + Ord + Hash
 where
     Self: std::marker::Sized,
 {
 }
 impl<T> RealNum for T where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Ord
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Ord + Hash
 {
 }
 
@@ -131,16 +132,12 @@ impl Node<u32> {
                         higher_node_differences.clone(),
                         sibling_difference,
                     );
-                    dbg!(higher_node_differences.clone());
                     higher_node_differences.push(prev_sibling_difference);
-                    dbg!(higher_node_differences.clone());
                     let other_child_optimal = helper(
                         bigger,
                         higher_node_differences,
                         sibling_difference,
                     );
-                    dbg!(one_child_optimal);
-                    dbg!(other_child_optimal);
                     one_child_optimal && other_child_optimal
                 }
             }

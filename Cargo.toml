@@ -22,3 +22,4 @@ rand = "0.8.5"
 rustc-hash = "1.1.0"
 rayon = "1.7.0"
 xxhash-rust = { version = "0.8.5", features = ["xxh3", "const_xxh3"] }
+sorted-vec = "0.8.2"

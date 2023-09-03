@@ -1,9 +1,10 @@
-use crate::Node;
+use crate::{node::RealNum, Node};
 
 use itertools::Itertools;
 use rand::{thread_rng, Rng};
 use std::iter::zip;
 
+#[derive(Clone, Debug)]
 pub struct Source<T>(Vec<(char, T)>);
 
 const ASCII: [char; 52] = [
@@ -59,16 +60,37 @@ impl Source<u32> {
     pub fn from_vec(vec: Vec<(char, u32)>) -> Source<u32> {
         Source(vec)
     }
+}
 
+impl<T> Source<T>
+where
+    T: RealNum,
+{
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.0.len()
     }
-    pub fn to_leaves_vec(&self) -> Vec<Node<u32>> {
+
+    pub fn to_leaves_vec(&self) -> Vec<Node<T>> {
         self.0
             .iter()
             .map(|(c, p)| Node::new_leaf(*p, *c))
             .collect_vec()
+    }
+}
+
+impl<T> Iterator for Source<T>
+where
+    T: RealNum,
+{
+    type Item = (char, T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((c, value)) = self.0.pop() {
+            Some((c, value))
+        } else {
+            None
+        }
     }
 }
 

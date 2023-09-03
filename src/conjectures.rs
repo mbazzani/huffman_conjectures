@@ -1,4 +1,4 @@
-use crate::code::{Code, CompetitiveOrd, FromNode, MaxDepth};
+use crate::code::{possible_length_profiles, possible_codes, Code, CompetitiveOrd, FromNode, MaxDepth};
 use crate::node::{Node, RealNum};
 use crate::source::Source;
 
@@ -10,7 +10,8 @@ fn remove_two<T>(x: usize, y: usize, vec: &mut Vec<T>) -> (T, T) {
     let (first, second) = if x < y { (x, y) } else { (y, x) };
 
     let j = vec.remove(first);
-    let k = vec.remove(second - 1); (j, k)
+    let k = vec.remove(second - 1);
+    (j, k)
 }
 
 fn join_nodes_by_indices<T>(
@@ -109,22 +110,24 @@ pub fn no_huffman_code_competitively_dominates_skinniest(
             .collect_vec();
         if !better_codes.is_empty() {
             println!("Found a code that beats skinny code");
-            println!("Skinny code:");
-            println!("{:#?}", tallest_huffman_code);
-            println!("A better code:");
-            println!("{:#?}", better_codes[0]);
+            dbg!(tallest_huffman_code);
+            dbg!(better_codes[0]);
             return false;
         }
     }
     true
 }
+
 pub fn no_huffman_dominates_another_and_is_optimal(
     source_size: usize,
     num_sources: u32,
 ) -> bool {
     let mut sources_tested = 0;
+    let mut sources_that_passed_heuristic = 0;
+    let possible_length_profiles = possible_length_profiles(source_size).unwrap();
     while sources_tested < num_sources {
-        let leaves = Source::new(source_size).to_leaves_vec();
+        let source = Source::new(source_size);
+        let leaves = source.to_leaves_vec();
         let possible_reductions = all_possible_reductions(leaves);
         let huffman_codes = possible_reductions
             .iter()
@@ -146,17 +149,30 @@ pub fn no_huffman_dominates_another_and_is_optimal(
         }
         let unbeaten_huffman_codes =
             huffman_codes.iter().filter(|(_, code)| {
-                !huffman_codes
+                huffman_codes
                     .iter()
-                    .any(|(_, other_code)| other_code.beats(code).unwrap())
+                    .all(|(_, other_code)| !other_code.beats(code).unwrap())
             });
-        let possibly_optimal_codes = unbeaten_huffman_codes
-            .filter(|(tree, _)| tree.is_probably_competitively_optimal());
-        if possibly_optimal_codes.peekable().peek().is_some() {
-            println!("Found possible example");
+        let mut possibly_optimal_codes = unbeaten_huffman_codes
+            .filter(|(tree, _)| tree.is_probably_competitively_optimal())
+            .map(|(_, code)| code);
+        if possibly_optimal_codes.clone().next().is_some() {
+            sources_that_passed_heuristic += 1;
+        }
+
+        let possible_codes = possible_codes(source.clone(), possible_length_profiles.clone());
+        let true_optimal_code_exists = possibly_optimal_codes.any(|code| {
+            possible_codes.iter().all(|other_code| {
+                code.competitive_advantage(other_code).unwrap() <= 0
+            })
+        });
+        if true_optimal_code_exists {
+            println!("Found counterexample!!");
             return false;
         }
     }
+    dbg!(sources_tested);
+    dbg!(sources_that_passed_heuristic);
     true
 }
 

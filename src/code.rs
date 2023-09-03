@@ -1,8 +1,13 @@
-use crate::node::{Node, NodeType};
+use crate::node::{Node, NodeType, RealNum};
+use crate::source::Source;
 
+use itertools::Itertools;
+use rayon::prelude::*;
+use sorted_vec::SortedVec;
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use std::iter::zip;
 use xxhash_rust::xxh3::Xxh3Builder;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -64,6 +69,16 @@ impl<T> New for Code<T> {
     }
 }
 
+//trait FromIter<T> {
+//    fn from_iter(iter: &mut dyn Iterator<Item = ((char, T), Depth)>) -> Self;
+//}
+//
+//impl<T> FromIter<T> for Code<T> where T: Hash + RealNum {
+//    fn from_iter(iter: &mut dyn Iterator<Item = ((char, T), Depth)>) -> Self {
+//        iter.map(|((s, p), d)|  (CodeWord { source_symbol: s, probability: p }, d)).collect()
+//    }
+//}
+
 pub trait FromNode {
     fn from_node(node: &Node<Probability>) -> Self;
 }
@@ -103,6 +118,93 @@ impl MaxDepth for Code<Probability> {
     fn max_depth(&self) -> Depth {
         *self.iter().max_by_key(|(_, &v)| v).unwrap().1
     }
+}
+
+fn next_length_profiles_from_previous(
+    length_profile: &SortedVec<Depth>,
+) -> Vec<SortedVec<Depth>> {
+    let mut possible_length_profiles = vec![];
+    let previous_depth = 0;
+    for &depth in length_profile.iter() {
+        if previous_depth != depth {
+            let mut length_profile = length_profile.clone();
+            length_profile.remove_item(&depth);
+            length_profile.insert(depth + 1);
+            length_profile.insert(depth + 1);
+            possible_length_profiles.push(length_profile);
+        }
+    }
+    possible_length_profiles
+}
+
+fn next_set_of_length_profiles(
+    previous_length_profiles: &HashSet<SortedVec<Depth>, Xxh3Builder>,
+) -> HashSet<SortedVec<Depth>, Xxh3Builder> {
+    let mut next_length_profiles = HashSet::with_hasher(Xxh3Builder::default());
+    for length_profile in previous_length_profiles.iter() {
+        next_length_profiles
+            .extend(next_length_profiles_from_previous(length_profile))
+    }
+    next_length_profiles
+}
+
+fn permute_length_profiles(
+    length_profiles: HashSet<SortedVec<Depth>, Xxh3Builder>,
+) -> HashSet<Vec<Depth>, Xxh3Builder> {
+    fn permutations(profile: SortedVec<Depth>) -> HashSet<Vec<Depth>> {
+        let len = profile.len();
+        profile.into_vec().into_iter().permutations(len).collect()
+    }
+    length_profiles
+        .into_iter()
+        .flat_map(|profile| permutations(profile))
+        .collect()
+}
+
+pub fn possible_length_profiles(
+    num_leaves: usize,
+) -> Option<HashSet<Vec<Depth>, Xxh3Builder>> {
+    if num_leaves < 2 {
+        return None;
+    }
+    let mut length_profiles: Vec<HashSet<SortedVec<Depth>, Xxh3Builder>> =
+        vec![];
+    let mut length_profiles_for_two_nodes =
+        HashSet::with_hasher(Xxh3Builder::default());
+    length_profiles_for_two_nodes.insert(SortedVec::from_unsorted(vec![1, 1]));
+    length_profiles.push(length_profiles_for_two_nodes);
+    for i in 0..num_leaves - 2 {
+        length_profiles.push(next_set_of_length_profiles(&length_profiles[i]))
+    }
+    Some(
+        length_profiles
+            .into_iter()
+            .last()
+            .into_par_iter()
+            .flat_map(|length_profiles| {
+                permute_length_profiles(length_profiles)
+            })
+            .collect(),
+    )
+}
+
+pub fn possible_codes<T>(source: Source<T>, length_profiles: HashSet<Vec<Depth>, Xxh3Builder>) -> Vec<Code<T>>
+where
+    T: RealNum + Hash,
+{
+    let code_words = source
+        .into_iter()
+        .map(|(s, p)| CodeWord {
+            source_symbol: s,
+            probability: p,
+        })
+        .collect_vec();
+    length_profiles
+        .into_iter()
+        .map(|profile| {
+            zip(code_words.clone().into_iter(), profile.into_iter()).collect()
+        })
+        .collect()
 }
 
 #[cfg(test)]
