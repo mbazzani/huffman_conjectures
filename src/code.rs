@@ -69,22 +69,10 @@ impl<T> New for Code<T> {
     }
 }
 
-//trait FromIter<T> {
-//    fn from_iter(iter: &mut dyn Iterator<Item = ((char, T), Depth)>) -> Self;
-//}
-//
-//impl<T> FromIter<T> for Code<T> where T: Hash + RealNum {
-//    fn from_iter(iter: &mut dyn Iterator<Item = ((char, T), Depth)>) -> Self {
-//        iter.map(|((s, p), d)|  (CodeWord { source_symbol: s, probability: p }, d)).collect()
-//    }
-//}
-
 pub trait FromNode {
     fn from_node(node: &Node<Probability>) -> Self;
 }
 
-//TODO: Rewrite to be tail recursive
-//and use iterators to avoid needless allocations
 impl FromNode for Code<Probability> {
     fn from_node(node: &Node<Probability>) -> Code<Probability> {
         fn helper(
@@ -155,10 +143,7 @@ fn permute_length_profiles(
         let len = profile.len();
         profile.into_vec().into_iter().permutations(len).collect()
     }
-    length_profiles
-        .into_iter()
-        .flat_map(|profile| permutations(profile))
-        .collect()
+    length_profiles.into_iter().flat_map(permutations).collect()
 }
 
 pub fn possible_length_profiles(
@@ -181,14 +166,15 @@ pub fn possible_length_profiles(
             .into_iter()
             .last()
             .into_par_iter()
-            .flat_map(|length_profiles| {
-                permute_length_profiles(length_profiles)
-            })
+            .flat_map(permute_length_profiles)
             .collect(),
     )
 }
 
-pub fn possible_codes<T>(source: Source<T>, length_profiles: HashSet<Vec<Depth>, Xxh3Builder>) -> Vec<Code<T>>
+pub fn possible_codes<T>(
+    source: Source<T>,
+    length_profiles: HashSet<Vec<Depth>, Xxh3Builder>,
+) -> Vec<Code<T>>
 where
     T: RealNum + Hash,
 {
@@ -201,9 +187,7 @@ where
         .collect_vec();
     length_profiles
         .into_iter()
-        .map(|profile| {
-            zip(code_words.clone().into_iter(), profile.into_iter()).collect()
-        })
+        .map(|profile| zip(code_words.clone(), profile).collect())
         .collect()
 }
 

@@ -1,4 +1,7 @@
-use crate::code::{possible_length_profiles, possible_codes, Code, CompetitiveOrd, FromNode, MaxDepth};
+use crate::code::{
+    possible_codes, possible_length_profiles, Code, CompetitiveOrd, FromNode,
+    MaxDepth,
+};
 use crate::node::{Node, RealNum};
 use crate::source::Source;
 
@@ -124,7 +127,8 @@ pub fn no_huffman_dominates_another_and_is_optimal(
 ) -> bool {
     let mut sources_tested = 0;
     let mut sources_that_passed_heuristic = 0;
-    let possible_length_profiles = possible_length_profiles(source_size).unwrap();
+    let possible_length_profiles =
+        possible_length_profiles(source_size).unwrap();
     while sources_tested < num_sources {
         let source = Source::new(source_size);
         let leaves = source.to_leaves_vec();
@@ -160,7 +164,8 @@ pub fn no_huffman_dominates_another_and_is_optimal(
             sources_that_passed_heuristic += 1;
         }
 
-        let possible_codes = possible_codes(source.clone(), possible_length_profiles.clone());
+        let possible_codes =
+            possible_codes(source.clone(), possible_length_profiles.clone());
         let true_optimal_code_exists = possibly_optimal_codes.any(|code| {
             possible_codes.iter().all(|other_code| {
                 code.competitive_advantage(other_code).unwrap() <= 0

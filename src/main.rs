@@ -3,7 +3,6 @@ mod conjectures;
 mod node;
 mod source;
 
-use crate::code::possible_length_profiles;
 use crate::conjectures::no_huffman_dominates_another_and_is_optimal;
 use crate::node::Node;
 
